@@ -26,13 +26,13 @@ type Provider struct {
 
 // Describes the provider data model according to its Schema.
 type ProviderModel struct {
-	MonteCarlo types.Object `tfsdk:"monte_carlo"`
+	AccountServiceKey types.Object `tfsdk:"account_service_key"`
 }
 
 // Describes the provider nested object data model according to its Schema.
-type ProviderMonteCarloModel struct {
-	API_KEY_ID    types.String `tfsdk:"api_key_id"`
-	API_KEY_TOKEN types.String `tfsdk:"api_key_token"`
+type ProviderAccountServiceKeyModel struct {
+	ID    types.String `tfsdk:"id"`
+	TOKEN types.String `tfsdk:"token"`
 }
 
 type ProviderContext struct {
@@ -47,16 +47,20 @@ func (p *Provider) Metadata(ctx context.Context, req provider.MetadataRequest, r
 func (p *Provider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Blocks: map[string]schema.Block{
-			"monte_carlo": schema.SingleNestedBlock{
-				MarkdownDescription: "Monte Carlo settings for this provider workflows.",
+			"account_service_key": schema.SingleNestedBlock{
+				MarkdownDescription: "Monte Carlo generated Account Service Key used to authenticate API calls of " +
+					"this provider. Should not be confused with personal API key. For more information: " +
+					"https://docs.getmontecarlo.com/docs/creating-an-api-token#creating-an-api-key",
 				Attributes: map[string]schema.Attribute{
-					"api_key_id": schema.StringAttribute{
-						MarkdownDescription: "Monte Carlo API key ID (required)",
+					"id": schema.StringAttribute{
+						MarkdownDescription: "Monte Carlo Account service key ID.",
 						Required:            true,
+						Sensitive:           true,
 					},
-					"api_key_token": schema.StringAttribute{
-						MarkdownDescription: "Monte Carlo API key token (required)",
+					"token": schema.StringAttribute{
+						MarkdownDescription: "Monte Carlo Account service key token.",
 						Required:            true,
+						Sensitive:           true,
 					},
 				},
 			},
@@ -71,9 +75,9 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		return
 	}
 
-	var monteCarlo ProviderMonteCarloModel
-	data.MonteCarlo.As(ctx, &monteCarlo, basetypes.ObjectAsOptions{})
-	client, err := client.NewMonteCarloClient(ctx, monteCarlo.API_KEY_ID.ValueString(), monteCarlo.API_KEY_TOKEN.ValueString())
+	var accountServiceKey ProviderAccountServiceKeyModel
+	data.AccountServiceKey.As(ctx, &accountServiceKey, basetypes.ObjectAsOptions{})
+	client, err := client.NewMonteCarloClient(ctx, accountServiceKey.ID.ValueString(), accountServiceKey.TOKEN.ValueString())
 	if err != nil {
 		to_print := fmt.Sprintf("Creating MC client: %s", err.Error())
 		resp.Diagnostics.AddError(to_print, "Please report this issue to the provider developers.")

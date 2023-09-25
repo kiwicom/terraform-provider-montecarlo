@@ -10,9 +10,9 @@ import (
 )
 
 type MonteCarloTransport struct {
-	API_KEY_ID     string
-	API_KEY_SECRET string
-	context        context.Context
+	API_KEY_ID    string
+	API_KEY_TOKEN string
+	context       context.Context
 }
 
 type MonteCarloClient struct {
@@ -41,7 +41,7 @@ func (mc *MonteCarloClient) ExecRaw(ctx context.Context, query string, variables
 func (transport MonteCarloTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	bytes, _ := httputil.DumpRequestOut(req, true)
 	req.Header.Set("x-mcd-id", transport.API_KEY_ID)
-	req.Header.Set("x-mcd-token", transport.API_KEY_SECRET)
+	req.Header.Set("x-mcd-token", transport.API_KEY_TOKEN)
 	resp, err := http.DefaultTransport.RoundTrip(req)
 	respBytes, _ := httputil.DumpResponse(resp, true)
 	bytes = append(bytes, respBytes...)

@@ -49,7 +49,7 @@ func (r *BigQueryWarehouseResource) Metadata(ctx context.Context, req resource.M
 func (r *BigQueryWarehouseResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "This resource represents the integration of Monte Carlo with BigQuery Data Warehouse. " +
+		MarkdownDescription: "This resource represents the integration of Monte Carlo with BigQuery data warehouse. " +
 			"While this resource is not responsible for handling data access and other operations, such as data filtering, " +
 			"it is responsible for managing the connection to BigQuery using the provided service account key.",
 		Attributes: map[string]schema.Attribute{
@@ -79,7 +79,7 @@ func (r *BigQueryWarehouseResource) Schema(ctx context.Context, req resource.Sch
 				MarkdownDescription: "Service account key used by the warehouse connection for authentication and " +
 					"authorization against BigQuery. The very same service account is used to grant required " +
 					"permissions to Monte Carlo BigQuery warehouse for the data access. For more information " +
-					"follow Monte Carlo documentation: docs.getmontecarlo.com/docs/bigquery",
+					"follow Monte Carlo documentation: https://docs.getmontecarlo.com/docs/bigquery",
 			},
 			"deletion_protection": schema.BoolAttribute{
 				Optional: true,
