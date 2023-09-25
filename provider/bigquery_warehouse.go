@@ -23,16 +23,17 @@ import (
 var _ resource.Resource = &BigQueryWarehouseResource{}
 var _ resource.ResourceWithImportState = &BigQueryWarehouseResource{}
 
+// To simplify provider implementations, a named function can be created with the resource implementation.
 func NewBigQueryWarehouseResource() resource.Resource {
 	return &BigQueryWarehouseResource{}
 }
 
-// ExampleResource defines the resource implementation.
+// BigQueryWarehouseResource defines the resource implementation.
 type BigQueryWarehouseResource struct {
 	client *client.MonteCarloClient
 }
 
-// ExampleResourceModel describes the resource data model.
+// BigQueryWarehouseResourceModel describes the resource data model according to its Schema.
 type BigQueryWarehouseResourceModel struct {
 	Uuid               types.String `tfsdk:"uuid"`
 	ConnectionUuid     types.String `tfsdk:"connection_uuid"`
@@ -42,18 +43,20 @@ type BigQueryWarehouseResourceModel struct {
 }
 
 func (r *BigQueryWarehouseResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_example"
+	resp.TypeName = req.ProviderTypeName + "_bigquery_warehouse"
 }
 
 func (r *BigQueryWarehouseResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "Example resource",
+		MarkdownDescription: "This resource represents the integration of Monte Carlo with BigQuery Data Warehouse. " +
+			"While this resource is not responsible for handling data access and other operations, such as data filtering, " +
+			"it is responsible for managing the connection to BigQuery using the provided service account key.",
 		Attributes: map[string]schema.Attribute{
 			"uuid": schema.StringAttribute{
 				Computed:            true,
 				Optional:            false,
-				MarkdownDescription: "Example identifier",
+				MarkdownDescription: "Unique identifier of warehouse managed by this resource.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -61,25 +64,30 @@ func (r *BigQueryWarehouseResource) Schema(ctx context.Context, req resource.Sch
 			"connection_uuid": schema.StringAttribute{
 				Computed:            true,
 				Optional:            false,
-				MarkdownDescription: "Example identifier",
+				MarkdownDescription: "Unique identifier of connection responsible for communication with BigQuery.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"name": schema.StringAttribute{
 				Required:            true,
-				MarkdownDescription: "Example configurable attribute with default value",
+				MarkdownDescription: "The name of the BigQuery warehouse as it will be presented in Monte Carlo.",
 			},
 			"service_account_key": schema.StringAttribute{
-				Required:            true,
-				Sensitive:           true,
-				MarkdownDescription: "Example configurable attribute",
+				Required:  true,
+				Sensitive: true,
+				MarkdownDescription: "Service account key used by the warehouse connection for authentication and " +
+					"authorization against BigQuery. The very same service account is used to grant required " +
+					"permissions to Monte Carlo BigQuery warehouse for the data access. For more information " +
+					"follow Monte Carlo documentation: docs.getmontecarlo.com/docs/bigquery",
 			},
 			"deletion_protection": schema.BoolAttribute{
-				Optional:            true,
-				Computed:            true,
-				Default:             booldefault.StaticBool(true),
-				MarkdownDescription: "Example configurable attribute",
+				Optional: true,
+				Computed: true,
+				Default:  booldefault.StaticBool(true),
+				MarkdownDescription: "Whether or not to allow Terraform to destroy the instance. Unless this field is set " +
+					"to false in Terraform state, a terraform destroy or terraform apply that would delete the instance will fail. " +
+					"This setting will prevent the deletion even if the real resource is already deleted.",
 			},
 		},
 	}

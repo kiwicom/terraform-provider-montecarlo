@@ -24,11 +24,12 @@ type Provider struct {
 	version string
 }
 
-// ProviderModel describes the provider data model.
+// Describes the provider data model according to its Schema.
 type ProviderModel struct {
 	MonteCarlo types.Object `tfsdk:"monte_carlo"`
 }
 
+// Describes the provider nested object data model according to its Schema.
 type ProviderMonteCarloModel struct {
 	API_KEY_ID    types.String `tfsdk:"api_key_id"`
 	API_KEY_TOKEN types.String `tfsdk:"api_key_token"`
@@ -39,7 +40,7 @@ type ProviderContext struct {
 }
 
 func (p *Provider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
-	resp.TypeName = "dataplatform"
+	resp.TypeName = "monte_carlo"
 	resp.Version = p.version
 }
 
@@ -47,14 +48,14 @@ func (p *Provider) Schema(ctx context.Context, req provider.SchemaRequest, resp 
 	resp.Schema = schema.Schema{
 		Blocks: map[string]schema.Block{
 			"monte_carlo": schema.SingleNestedBlock{
-				MarkdownDescription: "Monte Carlo specific inputs",
+				MarkdownDescription: "Monte Carlo settings for this provider workflows.",
 				Attributes: map[string]schema.Attribute{
 					"api_key_id": schema.StringAttribute{
-						MarkdownDescription: "Monte Carlo API key ID",
+						MarkdownDescription: "Monte Carlo API key ID (required)",
 						Required:            true,
 					},
 					"api_key_token": schema.StringAttribute{
-						MarkdownDescription: "Monte Carlo API key token",
+						MarkdownDescription: "Monte Carlo API key token (required)",
 						Required:            true,
 					},
 				},
