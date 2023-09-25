@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kiwicom/terraform-provider-monte-carlo/monte_carlo"
 	"github.com/kiwicom/terraform-provider-monte-carlo/monte_carlo/client"
+	"github.com/kiwicom/terraform-provider-monte-carlo/monte_carlo/common"
 	"github.com/kiwicom/terraform-provider-monte-carlo/monte_carlo/resources"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -82,7 +82,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		return
 	}
 
-	providerContext := monte_carlo.ProviderContext{MonteCarloClient: client}
+	providerContext := common.ProviderContext{MonteCarloClient: client}
 	resp.DataSourceData = providerContext
 	resp.ResourceData = providerContext
 }
