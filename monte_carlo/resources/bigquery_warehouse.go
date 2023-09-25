@@ -1,4 +1,4 @@
-package provider
+package resources
 
 import (
 	"context"
@@ -6,7 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/kiwicom/terraform-provider-monte-carlo/provider/client"
+	"github.com/kiwicom/terraform-provider-monte-carlo/monte_carlo"
+	"github.com/kiwicom/terraform-provider-monte-carlo/monte_carlo/client"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -96,8 +97,8 @@ func (r *BigQueryWarehouseResource) Schema(ctx context.Context, req resource.Sch
 func (r *BigQueryWarehouseResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return // prevent 'nil' panic during `terraform plan`
-	} else if pd, ok := req.ProviderData.(ProviderContext); ok {
-		r.client = pd.monteCarloClient
+	} else if pd, ok := req.ProviderData.(monte_carlo.ProviderContext); ok {
+		r.client = pd.MonteCarloClient
 	} else {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",

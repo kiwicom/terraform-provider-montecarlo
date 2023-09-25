@@ -5,7 +5,7 @@ import (
 	"flag"
 	"log"
 
-	"github.com/kiwicom/terraform-provider-monte-carlo/provider"
+	"github.com/kiwicom/terraform-provider-monte-carlo/monte_carlo/provider"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )
