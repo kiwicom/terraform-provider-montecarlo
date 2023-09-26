@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kiwicom/terraform-provider-monte-carlo/provider/client"
+	"github.com/kiwicom/terraform-provider-monte-carlo/monte_carlo/client"
+	"github.com/kiwicom/terraform-provider-monte-carlo/monte_carlo/common"
+	"github.com/kiwicom/terraform-provider-monte-carlo/monte_carlo/resources"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -33,10 +35,6 @@ type ProviderModel struct {
 type ProviderAccountServiceKeyModel struct {
 	ID    types.String `tfsdk:"id"`
 	TOKEN types.String `tfsdk:"token"`
-}
-
-type ProviderContext struct {
-	monteCarloClient *client.MonteCarloClient
 }
 
 func (p *Provider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -84,14 +82,14 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		return
 	}
 
-	providerContext := ProviderContext{monteCarloClient: client}
+	providerContext := common.ProviderContext{MonteCarloClient: client}
 	resp.DataSourceData = providerContext
 	resp.ResourceData = providerContext
 }
 
 func (p *Provider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		NewBigQueryWarehouseResource,
+		resources.NewBigQueryWarehouseResource,
 	}
 }
 

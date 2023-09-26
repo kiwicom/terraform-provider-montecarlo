@@ -1,4 +1,4 @@
-package provider
+package resources
 
 import (
 	"context"
@@ -6,7 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/kiwicom/terraform-provider-monte-carlo/provider/client"
+	"github.com/kiwicom/terraform-provider-monte-carlo/monte_carlo/client"
+	"github.com/kiwicom/terraform-provider-monte-carlo/monte_carlo/common"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -38,6 +39,7 @@ type BigQueryWarehouseResourceModel struct {
 	Uuid               types.String `tfsdk:"uuid"`
 	ConnectionUuid     types.String `tfsdk:"connection_uuid"`
 	Name               types.String `tfsdk:"name"`
+	DataCollectorUuid  types.String `tfsdk:"data_collector_uuid"`
 	ServiceAccountKey  types.String `tfsdk:"service_account_key"`
 	DeletionProtection types.Bool   `tfsdk:"deletion_protection"`
 }
@@ -73,6 +75,16 @@ func (r *BigQueryWarehouseResource) Schema(ctx context.Context, req resource.Sch
 				Required:            true,
 				MarkdownDescription: "The name of the BigQuery warehouse as it will be presented in Monte Carlo.",
 			},
+			"data_collector_uuid": schema.StringAttribute{
+				Required: true,
+				MarkdownDescription: "Unique identifier of data collector this warehouse will be attached to. " +
+					"Its not possible to change data collectors of already created warehouse, therefore if Terraform " +
+					"detects change in this attribute it will plan recreation (which might not be successfull due to deletion " +
+					"protection flag). Since this property is immutable in Monte Carlo warehouses it can be only changed in the configuration",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplaceIfConfigured(),
+				},
+			},
 			"service_account_key": schema.StringAttribute{
 				Required:  true,
 				Sensitive: true,
@@ -96,8 +108,8 @@ func (r *BigQueryWarehouseResource) Schema(ctx context.Context, req resource.Sch
 func (r *BigQueryWarehouseResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return // prevent 'nil' panic during `terraform plan`
-	} else if pd, ok := req.ProviderData.(ProviderContext); ok {
-		r.client = pd.monteCarloClient
+	} else if pd, ok := req.ProviderData.(common.ProviderContext); ok {
+		r.client = pd.MonteCarloClient
 	} else {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
@@ -286,7 +298,7 @@ func (r *BigQueryWarehouseResource) addConnection(ctx context.Context, data BigQ
 	addResult := client.AddConnection{}
 	var name, createWarehouseType *string = nil, nil
 	warehouseUuid := data.Uuid.ValueStringPointer()
-	dataCollectorUuid := UUID("6a9e3609-eb19-4c61-94bb-01aa14f12ffd")
+	dataCollectorUuid := data.DataCollectorUuid.ValueStringPointer()
 
 	if warehouseUuid == nil || *warehouseUuid == "" {
 		warehouseUuid = nil
@@ -296,7 +308,7 @@ func (r *BigQueryWarehouseResource) addConnection(ctx context.Context, data BigQ
 	}
 
 	variables = map[string]interface{}{
-		"dcId":                &dataCollectorUuid,
+		"dcId":                (*UUID)(dataCollectorUuid),
 		"dwId":                (*UUID)(warehouseUuid),
 		"key":                 testResult.TestBqCredentialsV2.Key,
 		"jobTypes":            []string{"metadata", "query_logs", "sql_query", "json_schema"},
