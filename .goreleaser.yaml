@@ -45,12 +45,12 @@ signs:
     artifacts: checksum
     args: [
       "--batch",
-      "--local-user"
+      "--local-user",
       "{{ .Env.GPG_FINGERPRINT }}",
       "--output",
       "${signature}",
       "--detach-sign",
-      "${artifact}"
+      "${artifact}",
     ]
     output: true
 
