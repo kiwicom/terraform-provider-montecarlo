@@ -6,7 +6,7 @@ terraform.tfvars
 terraform.tfplan
 terraform.tfstate
 bin/
-terraform-provider-monte-carlo
+terraform-provider-montecarlo
 modules-dev/
 /pkg/
 website/.vagrant

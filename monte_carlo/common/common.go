@@ -1,6 +1,6 @@
 package common
 
-import "github.com/kiwicom/terraform-provider-monte-carlo/monte_carlo/client"
+import "github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/client"
 
 // Cyclic types commonly shared in this provider packages
 
