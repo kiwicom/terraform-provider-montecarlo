@@ -16,9 +16,11 @@ import (
 // ensure the documentation is formatted properly.
 //go:generate terraform fmt -recursive ./examples/
 
-// Run the docs generation tool, check its repository for more information on how it works and how docs
-// can be customized.
+// Run the docs generation tool, check its repository for more information on how it works and how docs can be customized.
 //go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@v0.16.0
+
+// Run the docs generation tool, check its repository for more information on how it works and how docs can be customized.
+//go:generate go run github.com/hashicorp/go-changelog/cmd/changelog-pr-body-check@latest
 
 var (
 	// these will be set by the goreleaser configuration
