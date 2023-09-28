@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/kiwicom/terraform-provider-monte-carlo/monte_carlo/client"
-	"github.com/kiwicom/terraform-provider-monte-carlo/monte_carlo/common"
+	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/client"
+	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/common"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"

@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kiwicom/terraform-provider-monte-carlo/monte_carlo/client"
-	"github.com/kiwicom/terraform-provider-monte-carlo/monte_carlo/common"
-	"github.com/kiwicom/terraform-provider-monte-carlo/monte_carlo/resources"
+	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/client"
+	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/common"
+	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/resources"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -38,25 +38,29 @@ type ProviderAccountServiceKeyModel struct {
 }
 
 func (p *Provider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
-	resp.TypeName = "monte_carlo"
+	resp.TypeName = "montecarlo"
 	resp.Version = p.version
 }
 
 func (p *Provider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Blocks: map[string]schema.Block{
-			"account_service_key": schema.SingleNestedBlock{
-				MarkdownDescription: "Monte Carlo generated Account Service Key used to authenticate API calls of " +
-					"this provider. Should not be confused with personal API key. For more information: " +
-					"https://docs.getmontecarlo.com/docs/creating-an-api-token#creating-an-api-key",
+		MarkdownDescription: "This open-source _Terraform_ provider enables users to seamlessly and quickly integrate the " +
+			"**[Monte Carlo](https://www.montecarlodata.com/)** data reliabillity platform into their infrastructure as a code " +
+			"(IaC) workflows. Provider ensures this functionality by communicating with **Monte Carlo** via its GraphQL API.",
+		Attributes: map[string]schema.Attribute{
+			"account_service_key": schema.SingleNestedAttribute{
+				MarkdownDescription: "Monte Carlo generated **Account Service Key** used to authenticate API calls of " +
+					"this provider. Should not be confused with personal API key. <br><br>For more information: " +
+					"https://docs.getmontecarlo.com/docs/creating-an-api-token#creating-an-api-key <br><br>",
+				Required: true,
 				Attributes: map[string]schema.Attribute{
 					"id": schema.StringAttribute{
-						MarkdownDescription: "Monte Carlo Account service key ID.",
+						MarkdownDescription: "Monte Carlo **Account service key** _ID_.",
 						Required:            true,
 						Sensitive:           true,
 					},
 					"token": schema.StringAttribute{
-						MarkdownDescription: "Monte Carlo Account service key token.",
+						MarkdownDescription: "Monte Carlo **Account service key** _token_.",
 						Required:            true,
 						Sensitive:           true,
 					},
