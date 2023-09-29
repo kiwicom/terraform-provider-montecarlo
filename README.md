@@ -13,7 +13,7 @@ The **Terraform Provider Monte Carlo** enables seamless integration with the **[
 
 - **Repository rules** - [Code of conduct](./.github/CODE_OF_CONDUCT.md) :memo:
 - **For contributors** - [Contributing](./.github/CONTRIBUTING.md) :clipboard:
-- **Bug / Feature requests** - [Issue template](./.github/ISSUE_TEMPLATE.md) :speech_balloon:
+- **Bug / Feature requests** - [Issue forms](https://github.com/kiwicom/terraform-provider-montecarlo/issues/new/choose) :speech_balloon:
 
 ## Installation
 
