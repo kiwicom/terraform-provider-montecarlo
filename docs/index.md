@@ -42,5 +42,5 @@ provider "monte_carlo" {
 
 Required:
 
-- `id` (String, Sensitive) Monte Carlo _Account service key_ **ID**.
-- `token` (String, Sensitive) Monte Carlo _Account service key_ **token**.
+- `id` (String, Sensitive) Monte Carlo **Account service key** _ID_.
+- `token` (String, Sensitive) Monte Carlo **Account service key** _token_.
