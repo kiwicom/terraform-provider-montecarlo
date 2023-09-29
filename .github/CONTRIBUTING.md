@@ -44,16 +44,16 @@ If you're new to Terraform or any of the prerequisites mentioned above, consider
 
 ## Reporting Issues
 
-We value your contributions, and reporting issues or bugs is an essential part of improving [terraform-provider-montecarlo](https://github.com/kiwicom/terraform-provider-montecarlo). To ensure that issues are clear and actionable, we have provided an [Issue Template](ISSUE_TEMPLATE.md) that you should use when creating new issues.
+We value your contributions, and reporting issues or bugs is an essential part of improving [terraform-provider-montecarlo](https://github.com/kiwicom/terraform-provider-montecarlo). To ensure that issues are clear and actionable, we have provided an [Issue Forms](https://github.com/kiwicom/terraform-provider-montecarlo/issues/new/choose) that you will be asked to choose from when creating a new issue.
 
 **Please follow these guidelines when reporting issues:**
 
-- **Use the [Issue Template](ISSUE_TEMPLATE.md)**: Our issue template includes fields for essential information, such as a clear title, a detailed description of the issue, steps to reproduce, and the expected and actual behavior.<br><br>
+- **Use the [Issue form](https://github.com/kiwicom/terraform-provider-montecarlo/issues/new/choose)**: Our issue form includes fields for essential information, such as a clear title, a detailed description of the issue, steps to reproduce, and the expected and actual behavior.<br><br>
 - **Search for Existing Issues**: Before creating a new issue, search our existing issues to see if a similar one has already been reported.<br><br>
 - **Be Descriptive**: Provide as much detail as possible in your issue report, including the version of [terraform-provider-montecarlo](https://github.com/kiwicom/terraform-provider-montecarlo), the environment, and any relevant logs or error messages.<br><br>
 - **Follow Up**: Be prepared to engage in the conversation around your issue. Our maintainers and contributors may ask for additional details or clarification.<br><br>
 
-We want to make sure that every issue is addressed promptly and effectively. By using our issue template and following these guidelines, you help us maintain a productive and collaborative environment.
+We want to make sure that every issue is addressed promptly and effectively. By using our issue forms and following these guidelines, you help us maintain a productive and collaborative environment.
 
 [Create a New Issue](https://github.com/kiwicom/terraform-provider-montecarlo/issues/new/choose)
 

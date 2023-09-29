@@ -1,0 +1,113 @@
+name: Bug Report
+description: Create a bug report to help us improve the Terraform Provider
+title: "[Bug]: "
+labels: ["bug"]
+projects: []
+assignees:
+  - ndopj
+body:
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior
+      value: Explain what actually happened.
+      description: |
+        Include any error messages or logs if applicable. You are free to \
+        include **Terraform plan** properly formatted outputs here. Furthermore \
+        in this issue form you can find [Terraform configuration](#terraform-config-input) \
+        section which can be used to provide your Terraform configuration files.
+  - type: input
+    id: terraform-version
+    attributes:
+      label: Terraform version
+      description: Please specify the version of Terraform you are using.
+      placeholder: e.g. v1.3.7
+    validations:
+      required: true
+  - type: dropdown
+    id: provider-version
+    attributes:
+      label: Provider version
+      description: Please specify the version of the Terraform Provider you are using.
+      options:
+        - 0.0.1 (latest)
+      default: 0
+    validations:
+      required: true
+  - type: input
+    id: os-arch
+    attributes:
+      label: Operating system and architecture
+      placeholder: e.g. Windows-i386
+    validations:
+      required: true
+  - type: textarea
+    id: relevant-settings
+    attributes:
+      label: Relevant Environment Variables or Settings
+      placeholder: Any additional info you find relevant to this Bug report
+    validations:
+      required: false
+  - type: dropdown
+    id: terraform-config-affected
+    attributes:
+      label: List all of the affected functionalities
+      description: You are free to select multiple options from the dropdown
+      options:
+        - bigquery_warehouse
+      default: 0
+      multiple: true
+    validations:
+      required: false
+  - type: textarea
+    id: terraform-config-input
+    attributes:
+      label: Terraform configuration
+      render: hcl
+      value: |
+        # Replace sensitive information with placeholders.
+        resource "montecarlo_xxx" "name" {
+          # Configuration options
+        }
+      description: |
+        Copy-paste your Terraform configurations here. If reproducing the bug \
+        involves modifying the **config file** (e.g., apply a config, change a value, apply the \
+        config again, see the bug) then please include **both** the version of the config before \
+        the change, and the version of the config after the change.
+  - type: textarea
+    id: related-issues
+    attributes:
+      label: Related Issues
+      description: Are there any existing issues related to this one? Please link them here.
+      placeholder: Use Markdown editing to represent list of links.
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      description: By submitting this issue, you agree to follow our [Code of Conduct](../CODE_OF_CONDUCT.md)
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true
+        - label: I have reviewed the documentation and other relevant resources.
+          required: true
+        - label: I have searched for similar issues in the repository.
+          required: true
+        - label: I have provided all the requested information.
+          required: true
+        - label: I have tested the issue with the latest version of the Terraform Provider (if possible).
+          required: false
+  - type: textarea
+    id: additional-text
+    attributes:
+      label: Additional Information
+      description: Any additional information or context you would like to provide.
+      value: |
+        - Relevant logs or error output.
+        - Relevant configuration files or code snippets.
+        - Any potential workarounds you've tried.
+        - Links or any sources you found yourself while facing the issue
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        Thank you for contributing to our Terraform Provider repository and for taking the time to fill out this bug report!
