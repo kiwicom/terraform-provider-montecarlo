@@ -5,6 +5,7 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/client"
 	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/common"
@@ -267,7 +268,17 @@ func (r *BigQueryWarehouseResource) Delete(ctx context.Context, req resource.Del
 }
 
 func (r *BigQueryWarehouseResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+	idsImported := strings.Split(req.ID, ",")
+	if len(idsImported) != 2 || idsImported[0] == "" || idsImported[1] == "" {
+		resp.Diagnostics.AddError(
+			"Unexpected Import Identifier",
+			fmt.Sprintf("Expected import identifier with format: <uuid>,<connection_uuid>. Got: %q", req.ID),
+		)
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("uuid"), idsImported[0])...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("connection_uuid"), idsImported[1])...)
 }
 
 func (r *BigQueryWarehouseResource) addConnection(ctx context.Context, data BigQueryWarehouseResourceModel) (*BigQueryWarehouseResourceModel, diag.Diagnostics) {
