@@ -11,10 +11,10 @@ body:
     attributes:
       label: Actual Behavior
       value: Explain what actually happened.
-      description: |
-        Include any error messages or logs if applicable. You are free to \
-        include **Terraform plan** properly formatted outputs here. Furthermore \
-        in this issue form you can find [Terraform configuration](#terraform-config-input) \
+      description: >-
+        Include any error messages or logs if applicable. You are free to 
+        include **Terraform plan** properly formatted outputs here. Furthermore 
+        in this issue form you can find **Terraform configuration**
         section which can be used to provide your Terraform configuration files.
   - type: input
     id: terraform-version
@@ -69,10 +69,10 @@ body:
         resource "montecarlo_xxx" "name" {
           # Configuration options
         }
-      description: |
-        Copy-paste your Terraform configurations here. If reproducing the bug \
-        involves modifying the **config file** (e.g., apply a config, change a value, apply the \
-        config again, see the bug) then please include **both** the version of the config before \
+      description: >-
+        Copy-paste your Terraform configurations here. If reproducing the bug 
+        involves modifying the **config file** (e.g., apply a config, change a value, apply the 
+        config again, see the bug) then please include **both** the version of the config before 
         the change, and the version of the config after the change.
   - type: textarea
     id: related-issues
@@ -84,7 +84,7 @@ body:
     id: checklist
     attributes:
       label: Checklist
-      description: By submitting this issue, you agree to follow our [Code of Conduct](../CODE_OF_CONDUCT.md)
+      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/kiwicom/terraform-provider-montecarlo/blob/master/.github/CODE_OF_CONDUCT.md)
       options:
         - label: I agree to follow this project's Code of Conduct
           required: true
