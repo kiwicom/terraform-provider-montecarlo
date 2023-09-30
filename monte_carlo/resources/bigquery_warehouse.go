@@ -79,9 +79,9 @@ func (r *BigQueryWarehouseResource) Schema(ctx context.Context, req resource.Sch
 			"data_collector_uuid": schema.StringAttribute{
 				Required: true,
 				MarkdownDescription: "Unique identifier of data collector this warehouse will be attached to. " +
-					"Its not possible to change data collectors of already created warehouse, therefore if Terraform " +
+					"Its not possible to change data collectors of already created warehouses, therefore if Terraform " +
 					"detects change in this attribute it will plan recreation (which might not be successfull due to deletion " +
-					"protection flag). Since this property is immutable in Monte Carlo warehouses it can be only changed in the configuration",
+					"protection flag). Since this property is immutable in Monte Carlo warehouses it can only be changed in the configuration",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplaceIfConfigured(),
 				},
@@ -268,17 +268,15 @@ func (r *BigQueryWarehouseResource) Delete(ctx context.Context, req resource.Del
 }
 
 func (r *BigQueryWarehouseResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	idsImported := strings.Split(req.ID, ",")
-	if len(idsImported) != 2 || idsImported[0] == "" || idsImported[1] == "" {
+	if idsImported := strings.Split(req.ID, ","); len(idsImported) == 2 && idsImported[0] != "" && idsImported[1] != "" {
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("uuid"), idsImported[0])...)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("connection_uuid"), idsImported[1])...)
+	} else {
 		resp.Diagnostics.AddError(
 			"Unexpected Import Identifier",
-			fmt.Sprintf("Expected import identifier with format: <uuid>,<connection_uuid>. Got: %q", req.ID),
+			fmt.Sprintf("Expected import identifier with format: <warehouse_uuid>,<connection_uuid>. Got: %q", req.ID),
 		)
-		return
 	}
-
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("uuid"), idsImported[0])...)
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("connection_uuid"), idsImported[1])...)
 }
 
 func (r *BigQueryWarehouseResource) addConnection(ctx context.Context, data BigQueryWarehouseResourceModel) (*BigQueryWarehouseResourceModel, diag.Diagnostics) {

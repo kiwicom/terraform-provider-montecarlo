@@ -26,7 +26,7 @@ resource "montecarlo_bigquery_warehouse" "example" {
 
 ### Required
 
-- `data_collector_uuid` (String) Unique identifier of data collector this warehouse will be attached to. Its not possible to change data collectors of already created warehouse, therefore if Terraform detects change in this attribute it will plan recreation (which might not be successfull due to deletion protection flag). Since this property is immutable in Monte Carlo warehouses it can be only changed in the configuration
+- `data_collector_uuid` (String) Unique identifier of data collector this warehouse will be attached to. Its not possible to change data collectors of already created warehouses, therefore if Terraform detects change in this attribute it will plan recreation (which might not be successfull due to deletion protection flag). Since this property is immutable in Monte Carlo warehouses it can only be changed in the configuration
 - `name` (String) The name of the BigQuery warehouse as it will be presented in Monte Carlo.
 - `service_account_key` (String, Sensitive) Service account key used by the warehouse connection for authentication and authorization against BigQuery. The very same service account is used to grant required permissions to Monte Carlo BigQuery warehouse for the data access. For more information follow Monte Carlo documentation: https://docs.getmontecarlo.com/docs/bigquery
 
