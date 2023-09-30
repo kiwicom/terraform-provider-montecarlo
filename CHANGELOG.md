@@ -1,4 +1,24 @@
 
+
+<a name="v0.1.0"></a>
+## [v0.1.0](https://github.com/kiwicom/terraform-provider-montecarlo/compare/v0.0.1...v0.1.0)
+
+> 2023-09-30
+
+### Bug Fixes
+
+* **release|registry:** provider naming and docs for registry ([#8](https://github.com/kiwicom/terraform-provider-montecarlo/issues/8))
+* **repo|reports:** broken links and unnecessary newlines ([#13](https://github.com/kiwicom/terraform-provider-montecarlo/issues/13))
+
+### Features
+
+* **release|registry:** manifest for Terraform registry ([#9](https://github.com/kiwicom/terraform-provider-montecarlo/issues/9))
+* **repo:** github changelog and release notes ([#10](https://github.com/kiwicom/terraform-provider-montecarlo/issues/10))
+* **repo|docs:** finished basic community standard documents ([#11](https://github.com/kiwicom/terraform-provider-montecarlo/issues/11))
+* **repo|reports:** migrate to beta issue forms ([#12](https://github.com/kiwicom/terraform-provider-montecarlo/issues/12))
+* **resources:** import state for 'bigquery_warehouse' ([#14](https://github.com/kiwicom/terraform-provider-montecarlo/issues/14))
+
+
 <a name="v0.0.1"></a>
 ## v0.0.1
 
