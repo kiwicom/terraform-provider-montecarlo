@@ -9,36 +9,43 @@ import (
 	"github.com/hasura/go-graphql-client"
 )
 
-type MonteCarloTransport struct {
+// client interface
+type MonteCarloClient interface {
+	Mutate(ctx context.Context, m interface{}, variables map[string]interface{}, options ...graphql.Option) error
+	Query(ctx context.Context, q interface{}, variables map[string]interface{}, options ...graphql.Option) error
+	ExecRaw(ctx context.Context, query string, variables map[string]interface{}, options ...graphql.Option) ([]byte, error)
+}
+
+type monteCarloTransport struct {
 	API_KEY_ID    string
 	API_KEY_TOKEN string
 	context       context.Context
 }
 
-type MonteCarloClient struct {
+type monteCarloClient struct {
 	client    *graphql.Client
-	transport *MonteCarloTransport
+	transport *monteCarloTransport
 }
 
-func NewMonteCarloClient(context context.Context, api_key_id string, api_key_token string) (*MonteCarloClient, error) {
-	transport := MonteCarloTransport{api_key_id, api_key_token, context}
+func NewMonteCarloClient(context context.Context, api_key_id string, api_key_token string) (MonteCarloClient, error) {
+	transport := monteCarloTransport{api_key_id, api_key_token, context}
 	client := graphql.NewClient("https://api.getmontecarlo.com/graphql", &http.Client{Transport: transport})
-	return &MonteCarloClient{client, &transport}, nil
+	return &monteCarloClient{client, &transport}, nil
 }
 
-func (mc *MonteCarloClient) Mutate(ctx context.Context, m interface{}, variables map[string]interface{}, options ...graphql.Option) error {
+func (mc *monteCarloClient) Mutate(ctx context.Context, m interface{}, variables map[string]interface{}, options ...graphql.Option) error {
 	return mc.client.Mutate(ctx, m, variables, options...)
 }
 
-func (mc *MonteCarloClient) Query(ctx context.Context, q interface{}, variables map[string]interface{}, options ...graphql.Option) error {
+func (mc *monteCarloClient) Query(ctx context.Context, q interface{}, variables map[string]interface{}, options ...graphql.Option) error {
 	return mc.client.Query(ctx, q, variables, options...)
 }
 
-func (mc *MonteCarloClient) ExecRaw(ctx context.Context, query string, variables map[string]interface{}, options ...graphql.Option) ([]byte, error) {
+func (mc *monteCarloClient) ExecRaw(ctx context.Context, query string, variables map[string]interface{}, options ...graphql.Option) ([]byte, error) {
 	return mc.client.ExecRaw(ctx, query, variables, options...)
 }
 
-func (transport MonteCarloTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+func (transport monteCarloTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	bytes, _ := httputil.DumpRequestOut(req, true)
 	req.Header.Set("x-mcd-id", transport.API_KEY_ID)
 	req.Header.Set("x-mcd-token", transport.API_KEY_TOKEN)
@@ -48,6 +55,9 @@ func (transport MonteCarloTransport) RoundTrip(req *http.Request) (*http.Respons
 	tflog.Debug(transport.context, string(bytes))
 	return resp, err
 }
+
+type UUID string
+type JSONString string
 
 type Diagnostic struct {
 	Cause           string

@@ -24,6 +24,7 @@ type Provider struct {
 	// provider is built and ran locally, and "test" when running acceptance
 	// testing.
 	version string
+	context *common.ProviderContext
 }
 
 // Describes the provider data model according to its Schema.
@@ -77,6 +78,12 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		return
 	}
 
+	if p.context != nil {
+		resp.DataSourceData = *p.context
+		resp.ResourceData = *p.context
+		return
+	}
+
 	var accountServiceKey ProviderAccountServiceKeyModel
 	data.AccountServiceKey.As(ctx, &accountServiceKey, basetypes.ObjectAsOptions{})
 	client, err := client.NewMonteCarloClient(ctx, accountServiceKey.ID.ValueString(), accountServiceKey.TOKEN.ValueString())
@@ -86,9 +93,9 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		return
 	}
 
-	providerContext := common.ProviderContext{MonteCarloClient: client}
-	resp.DataSourceData = providerContext
-	resp.ResourceData = providerContext
+	p.context = &common.ProviderContext{MonteCarloClient: client}
+	resp.DataSourceData = *p.context
+	resp.ResourceData = *p.context
 }
 
 func (p *Provider) Resources(ctx context.Context) []func() resource.Resource {
@@ -103,8 +110,8 @@ func (p *Provider) DataSources(ctx context.Context) []func() datasource.DataSour
 	}
 }
 
-func New(version string) func() provider.Provider {
+func New(version string, context *common.ProviderContext) func() provider.Provider {
 	return func() provider.Provider {
-		return &Provider{version: version}
+		return &Provider{version: version, context: context}
 	}
 }
