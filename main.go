@@ -19,6 +19,9 @@ import (
 // Run the docs generation tool, check its repository for more information on how it works and how docs can be customized.
 //go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@v0.16.0
 
+// Run the mocks generation tool for testing, configured by the .mockery.yaml file.
+//go:generate go run github.com/vektra/mockery/v2@latest
+
 var (
 	// these will be set by the goreleaser configuration
 	// to appropriate values for the compiled binary.

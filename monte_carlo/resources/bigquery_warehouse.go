@@ -267,6 +267,8 @@ func (r *BigQueryWarehouseResource) ImportState(ctx context.Context, req resourc
 	if idsImported := strings.Split(req.ID, ","); len(idsImported) == 2 && idsImported[0] != "" && idsImported[1] != "" {
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("uuid"), idsImported[0])...)
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("connection_uuid"), idsImported[1])...)
+		// since the Read operation is not capable of reading service_account_key - force its update right after import
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("service_account_key"), (*string)(nil))...)
 	} else {
 		resp.Diagnostics.AddError(
 			"Unexpected Import Identifier",

@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/client"
+	cmock "github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/client/mock"
 	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/common"
-	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/mocks"
 	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/provider"
 	"github.com/stretchr/testify/mock"
 
@@ -26,7 +26,7 @@ func TestAccBigQueryWarehouseResource(t *testing.T) {
 		ProtoV6ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{ // Create and Read testing
-				Config: basicConfig("name1", "dataCollector1"),
+				Config: basicConfig("name1", "dataCollector1", "{}"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "uuid", "8bfc4"),
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "connection_uuid", "8cd5a"),
@@ -36,11 +36,31 @@ func TestAccBigQueryWarehouseResource(t *testing.T) {
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "deletion_protection", "false"),
 				),
 			},
+			{ // ImportState testing
+				ResourceName:                         "montecarlo_bigquery_warehouse.test",
+				ImportState:                          true,
+				ImportStateVerify:                    true,
+				ImportStateId:                        "8bfc4,8cd5a",
+				ImportStateVerifyIdentifierAttribute: "uuid",
+				ImportStateVerifyIgnore:              []string{"data_collector_uuid", "deletion_protection", "service_account_key"},
+			},
+			// Update and Read testing
+			{
+				Config: basicConfig("name2", "dataCollector1", "{\"json\": \"json\"}"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "uuid", "8bfc4"),
+					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "connection_uuid", "8cd5a"),
+					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "name", "name2"),
+					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "data_collector_uuid", "dataCollector1"),
+					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "service_account_key", "{\"json\": \"json\"}"),
+					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "deletion_protection", "false"),
+				),
+			},
 		},
 	})
 }
 
-func basicConfig(name string, dcid string) string {
+func basicConfig(name string, dcid string, saKey string) string {
 	return fmt.Sprintf(`
 provider "montecarlo" {
   account_service_key = {
@@ -52,14 +72,14 @@ provider "montecarlo" {
 resource "montecarlo_bigquery_warehouse" "test" {
   name                = %[1]q
   data_collector_uuid = %[2]q
-  service_account_key = "{}"
+  service_account_key = %[3]q
   deletion_protection = false
 }
-`, name, dcid)
+`, name, dcid, saKey)
 }
 
 func initMonteCarloClient() client.MonteCarloClient {
-	mcClient := mocks.MonteCarloClient{}
+	mcClient := cmock.MonteCarloClient{}
 	// Add connection operations
 	mcClient.On("Mutate", mock.Anything, mock.AnythingOfType("*client.TestBqCredentialsV2"), mock.Anything).Return(nil).Run(func(args mock.Arguments) {
 		arg := args.Get(1).(*client.TestBqCredentialsV2)
@@ -78,14 +98,30 @@ func initMonteCarloClient() client.MonteCarloClient {
 	// Read operations
 	readQuery := "query getWarehouse($uuid: UUID) { getWarehouse(uuid: $uuid) { name,connections{uuid,type} } }"
 	readVariables1 := map[string]interface{}{"uuid": client.UUID("8bfc4")}
-	response1 := []byte(`{"getWarehouse":{"name":"name1","connections":[{"uuid":"8cd5a"}]}}`)
-	mcClient.On("ExecRaw", mock.Anything, readQuery, readVariables1).Return(response1, nil)
+	readResponse1 := []byte(`{"getWarehouse":{"name":"name1","connections":[{"uuid":"8cd5a"}]}}`)
+	mcClient.On("ExecRaw", mock.Anything, readQuery, readVariables1).Return(readResponse1, nil)
 
 	// Delete operations
-	deleteVariables1 := map[string]interface{}{"connectionId": client.UUID("8cd5a")}
-	mcClient.On("Mutate", mock.Anything, mock.AnythingOfType("*client.RemoveConnection"), deleteVariables1).Return(nil).Run(func(args mock.Arguments) {
+	deleteVariables2 := map[string]interface{}{"connectionId": client.UUID("8cd5a")}
+	mcClient.On("Mutate", mock.Anything, mock.AnythingOfType("*client.RemoveConnection"), deleteVariables2).Return(nil).Run(func(args mock.Arguments) {
 		arg := args.Get(1).(*client.RemoveConnection)
 		arg.RemoveConnection.Success = true
+	})
+
+	// Update operations
+	updateVariables := map[string]interface{}{"dwId": client.UUID("8bfc4"), "name": "name2"}
+	mcClient.On("Mutate", mock.Anything, mock.AnythingOfType("*client.SetWarehouseName"), updateVariables).Return(nil).Run(func(args mock.Arguments) {
+		arg := args.Get(1).(*client.SetWarehouseName)
+		arg.SetWarehouseName.Warehouse.Uuid = "8bfc4"
+		arg.SetWarehouseName.Warehouse.Name = "name2"
+	})
+	mcClient.On("Mutate", mock.Anything, mock.AnythingOfType("*client.UpdateCredentials"), mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+		arg := args.Get(1).(*client.UpdateCredentials)
+		arg.UpdateCredentials.Success = true
+		// after update, read operation must return new results
+		mcClient.On("ExecRaw", mock.Anything, readQuery, readVariables1).Unset()
+		readResponse := []byte(`{"getWarehouse":{"name":"name2","connections":[{"uuid":"8cd5a"}]}}`)
+		mcClient.On("ExecRaw", mock.Anything, readQuery, readVariables1).Return(readResponse, nil)
 	})
 	return &mcClient
 }
