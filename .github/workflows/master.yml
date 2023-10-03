@@ -18,9 +18,28 @@ jobs:
   tests:
     if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
     uses: ./.github/workflows/tests.yml
+  coverage-check:
+    if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
     steps:
-      - name: Create a coverage file in workspace
-        run: cat coverage.out > ${{ runner.workspace }}/coverage.out
+      - name: check test coverage
+        id: coverage ## this step must have id
+        uses: vladopajic/go-test-coverage@v2
+        with:
+          profile: ${{ runner.workspace }}/coverage.out
+          local-prefix: github.com/kiwicom/terraform-provider-montecarlo
+          threshold-file: 0
+          threshold-package: 0
+          threshold-total: 0
+      - name: make coverage badge
+        uses: action-badges/core@0.2.2
+        with:
+          label: coverage
+          message: ${{ steps.coverage.outputs.badge-text }}
+          message-color: ${{ steps.coverage.outputs.badge-color }}
+          file-name: coverage.svg
+          badge-branch: badges ## orphan branch where badge will be committed
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
   goreleaser:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     needs: tests
