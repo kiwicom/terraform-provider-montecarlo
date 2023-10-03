@@ -28,3 +28,5 @@ jobs:
           go tool cover -func=coverage.out -o=coverage.out
         env:
           TF_ACC: '1'
+      - name: Create a coverage file in workspace
+        run: cat coverage.out > ${{ runner.workspace }}/coverage.out

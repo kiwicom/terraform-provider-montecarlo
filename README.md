@@ -3,7 +3,10 @@
 [![GitHub issues](https://img.shields.io/github/issues/kiwicom/terraform-provider-montecarlo)](https://github.com/kiwicom/terraform-provider-montecarlo/issues)
 ![GitHub go.mod Go version)](https://img.shields.io/github/go-mod/go-version/kiwicom/terraform-provider-montecarlo)
 [![last-commit](https://img.shields.io/github/last-commit/kiwicom/terraform-provider-montecarlo)]()
-![GitHub release](https://img.shields.io/github/v/release/kiwicom/terraform-provider-montecarlo)  
+![master cicd status](https://github.com/kiwicom/terraform-provider-montecarlo/actions/workflows/master.yml/badge.svg)
+![GitHub release](https://img.shields.io/github/v/release/kiwicom/terraform-provider-montecarlo)
+[![Go Report Card](https://goreportcard.com/badge/github.com/kiwicom/terraform-provider-montecarlo)](https://goreportcard.com/report/github.com/kiwicom/terraform-provider-montecarlo)
+![coverage](https://raw.githubusercontent.com/kiwicom/terraform-provider-montecarlo/badges/.badges/master/coverage.svg)  
 
 [![Terraform](https://img.shields.io/badge/terraform-%235835CC.svg?style=for-the-badge&logo=terraform&logoColor=white)](https://registry.terraform.io/providers/kiwicom/montecarlo/latest)
 
