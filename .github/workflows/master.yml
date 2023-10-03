@@ -23,6 +23,11 @@ jobs:
     needs: tests
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v4
+        with:
+          cache: true
+          go-version-file: 'go.mod'
       - uses: actions/download-artifact@v3
         with:
           name: coverage
@@ -55,8 +60,8 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-go@v4
         with:
-          go-version-file: 'go.mod'
           cache: true
+          go-version-file: 'go.mod'
       - name: Generate Release Notes
         run: |
           export CURR_TAG=$(git describe --tags --abbrev=0)
