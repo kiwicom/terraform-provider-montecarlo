@@ -1,0 +1,30 @@
+name: Terraform Provider Tests
+
+on:
+  workflow_call:
+  pull_request:
+      branches:
+        - master
+
+permissions:
+  # Permission for checking out code
+  contents: read
+
+jobs:
+  acceptance-tests:
+    name: Acceptance Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: 'go.mod'
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: '1.5.*'
+          terraform_wrapper: false
+      - run: |
+          go test -v ./... -covermode=count -coverprofile=coverage.out
+          go tool cover -func=coverage.out -o=coverage.out
+        env:
+          TF_ACC: '1'
