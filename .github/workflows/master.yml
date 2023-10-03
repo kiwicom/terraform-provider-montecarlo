@@ -23,11 +23,15 @@ jobs:
     needs: tests
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: coverage
+          path: ./coverage.out
       - name: check test coverage
         id: coverage ## this step must have id
         uses: vladopajic/go-test-coverage@v2
         with:
-          profile: ${{ runner.workspace }}/coverage.out
+          profile: ./coverage.out
           local-prefix: github.com/kiwicom/terraform-provider-montecarlo
           threshold-file: 0
           threshold-package: 0
