@@ -26,7 +26,6 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: coverage
-          path: ./coverage.out
       - name: check test coverage
         id: coverage ## this step must have id
         uses: vladopajic/go-test-coverage@v2
