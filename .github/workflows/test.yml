@@ -23,9 +23,8 @@ jobs:
         with:
           terraform_version: '1.5.*'
           terraform_wrapper: false
-      - run: |
-          go test -v ./... -covermode=count -coverprofile=coverage.out
-          go tool cover -func=coverage.out -o=coverage.out
+      - run:
+          go test -v ./... -coverprofile=coverage.out
         env:
           TF_ACC: '1'
       - uses: actions/upload-artifact@v3
