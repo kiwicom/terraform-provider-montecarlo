@@ -10,13 +10,13 @@ options:
          - feat
          - fix
          - perf
-    #     - refactor
+         - docs
   commit_groups:
      title_maps:
-       feat: Features
-       fix: Bug Fixes
-       perf: Performance Improvements
-    #   refactor: Code Refactoring
+       feat: ":sparkles: Features"
+       fix: ":bug: Bug Fixes"
+       perf: ":zap: Performance Improvements"
+       docs: ":books: Documentation (unchanged functionality)"
   header:
     pattern: "^(\\w*)(?:\\(([\\w\\$\\.\\-\\*\\s\\:\\|\\-]*)\\))?\\:\\s(.*)$"
     pattern_maps:
