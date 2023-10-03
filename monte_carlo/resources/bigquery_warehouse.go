@@ -32,7 +32,7 @@ func NewBigQueryWarehouseResource() resource.Resource {
 
 // BigQueryWarehouseResource defines the resource implementation.
 type BigQueryWarehouseResource struct {
-	client *client.MonteCarloClient
+	client client.MonteCarloClient
 }
 
 // BigQueryWarehouseResourceModel describes the resource data model according to its Schema.
@@ -145,9 +145,8 @@ func (r *BigQueryWarehouseResource) Read(ctx context.Context, req resource.ReadR
 		return
 	}
 
-	type UUID string
 	getResult := client.GetWarehouse{}
-	variables := map[string]interface{}{"uuid": UUID(data.Uuid.ValueString())}
+	variables := map[string]interface{}{"uuid": client.UUID(data.Uuid.ValueString())}
 	query := "query getWarehouse($uuid: UUID) { getWarehouse(uuid: $uuid) { name,connections{uuid,type} } }"
 
 	if bytes, err := r.client.ExecRaw(ctx, query, variables); err != nil && (bytes == nil || len(bytes) == 0) {
@@ -190,10 +189,9 @@ func (r *BigQueryWarehouseResource) Update(ctx context.Context, req resource.Upd
 		return
 	}
 
-	type UUID string
 	setNameResult := client.SetWarehouseName{}
 	variables := map[string]interface{}{
-		"dwId": UUID(data.Uuid.ValueString()),
+		"dwId": client.UUID(data.Uuid.ValueString()),
 		"name": data.Name.ValueString(),
 	}
 
@@ -213,11 +211,10 @@ func (r *BigQueryWarehouseResource) Update(ctx context.Context, req resource.Upd
 		}
 	}
 
-	type JSONString string
 	updateResult := client.UpdateCredentials{}
 	variables = map[string]interface{}{
-		"changes":        JSONString(data.ServiceAccountKey.ValueString()),
-		"connectionId":   UUID(data.ConnectionUuid.ValueString()),
+		"changes":        client.JSONString(data.ServiceAccountKey.ValueString()),
+		"connectionId":   client.UUID(data.ConnectionUuid.ValueString()),
 		"shouldReplace":  true,
 		"shouldValidate": false,
 	}
@@ -252,9 +249,8 @@ func (r *BigQueryWarehouseResource) Delete(ctx context.Context, req resource.Del
 		return
 	}
 
-	type UUID string
 	removeResult := client.RemoveConnection{}
-	variables := map[string]interface{}{"connectionId": UUID(data.ConnectionUuid.ValueString())}
+	variables := map[string]interface{}{"connectionId": client.UUID(data.ConnectionUuid.ValueString())}
 
 	if err := r.client.Mutate(ctx, &removeResult, variables); err != nil {
 		toPrint := fmt.Sprintf("MC client 'RemoveConnection' mutation result - %s", err.Error())
@@ -271,6 +267,8 @@ func (r *BigQueryWarehouseResource) ImportState(ctx context.Context, req resourc
 	if idsImported := strings.Split(req.ID, ","); len(idsImported) == 2 && idsImported[0] != "" && idsImported[1] != "" {
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("uuid"), idsImported[0])...)
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("connection_uuid"), idsImported[1])...)
+		// since the Read operation is not capable of reading service_account_key - force its update right after import
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("service_account_key"), (*string)(nil))...)
 	} else {
 		resp.Diagnostics.AddError(
 			"Unexpected Import Identifier",
@@ -303,7 +301,6 @@ func (r *BigQueryWarehouseResource) addConnection(ctx context.Context, data BigQ
 		return &data, diagsResult
 	}
 
-	type UUID string
 	addResult := client.AddConnection{}
 	var name, createWarehouseType *string = nil, nil
 	warehouseUuid := data.Uuid.ValueStringPointer()
@@ -317,8 +314,8 @@ func (r *BigQueryWarehouseResource) addConnection(ctx context.Context, data BigQ
 	}
 
 	variables = map[string]interface{}{
-		"dcId":                (*UUID)(dataCollectorUuid),
-		"dwId":                (*UUID)(warehouseUuid),
+		"dcId":                (*client.UUID)(dataCollectorUuid),
+		"dwId":                (*client.UUID)(warehouseUuid),
 		"key":                 testResult.TestBqCredentialsV2.Key,
 		"jobTypes":            []string{"metadata", "query_logs", "sql_query", "json_schema"},
 		"name":                name,
