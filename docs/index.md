@@ -15,14 +15,14 @@ This open-source _Terraform_ provider enables users to seamlessly and quickly in
 ```terraform
 terraform {
   required_providers {
-    monte_carlo = {
+    montecarlo = {
       source  = "kiwicom/montecarlo"
       version = "~> 0.0.1"
     }
   }
 }
 
-provider "monte_carlo" {
+provider "montecarlo" {
   account_service_key = {
     id    = "montecarlo"
     token = "montecarlo"
