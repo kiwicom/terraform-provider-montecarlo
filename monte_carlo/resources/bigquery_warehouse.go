@@ -278,15 +278,14 @@ func (r *BigQueryWarehouseResource) Delete(ctx context.Context, req resource.Del
 }
 
 func (r *BigQueryWarehouseResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	if idsImported := strings.Split(req.ID, ","); len(idsImported) == 2 && idsImported[0] != "" && idsImported[1] != "" {
+	idsImported := strings.Split(req.ID, ",")
+	if len(idsImported) == 3 && idsImported[0] != "" && idsImported[1] != "" && idsImported[2] != "" {
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("uuid"), idsImported[0])...)
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("connection_uuid"), idsImported[1])...)
-		// since the Read operation is not capable of reading service_account_key - force its update right after import
-		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("service_account_key"), (*string)(nil))...)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("data_collector_uuid"), idsImported[2])...)
 	} else {
-		resp.Diagnostics.AddError(
-			"Unexpected Import Identifier",
-			fmt.Sprintf("Expected import identifier with format: <warehouse_uuid>,<connection_uuid>. Got: %q", req.ID),
+		resp.Diagnostics.AddError("Unexpected Import Identifier", fmt.Sprintf(
+			"Expected import identifier with format: <warehouse_uuid>,<connection_uuid>,<data_collector_uuid>. Got: %q", req.ID),
 		)
 	}
 }

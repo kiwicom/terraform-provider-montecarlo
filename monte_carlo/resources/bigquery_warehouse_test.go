@@ -40,9 +40,9 @@ func TestAccBigQueryWarehouseResource(t *testing.T) {
 				ResourceName:                         "montecarlo_bigquery_warehouse.test",
 				ImportState:                          true,
 				ImportStateVerify:                    true,
-				ImportStateId:                        "8bfc4,8cd5a",
+				ImportStateId:                        "8bfc4,8cd5a,dataCollector1",
 				ImportStateVerifyIdentifierAttribute: "uuid",
-				ImportStateVerifyIgnore:              []string{"data_collector_uuid", "deletion_protection", "service_account_key"},
+				ImportStateVerifyIgnore:              []string{"deletion_protection", "service_account_key"},
 			},
 			// Update and Read testing
 			{
@@ -98,7 +98,7 @@ func initMonteCarloClient() client.MonteCarloClient {
 	// Read operations
 	readQuery := "query getWarehouse($uuid: UUID) { getWarehouse(uuid: $uuid) { name,connections{uuid,type} } }"
 	readVariables1 := map[string]interface{}{"uuid": client.UUID("8bfc4")}
-	readResponse1 := []byte(`{"getWarehouse":{"name":"name1","connections":[{"uuid":"8cd5a"}]}}`)
+	readResponse1 := []byte(`{"getWarehouse":{"name":"name1","connections":[{"uuid":"8cd5a"}],"dataCollector":{"uuid":"dataCollector1"}}}`)
 	mcClient.On("ExecRaw", mock.Anything, readQuery, readVariables1).Return(readResponse1, nil)
 
 	// Delete operations
@@ -120,7 +120,7 @@ func initMonteCarloClient() client.MonteCarloClient {
 		arg.UpdateCredentials.Success = true
 		// after update, read operation must return new results
 		mcClient.On("ExecRaw", mock.Anything, readQuery, readVariables1).Unset()
-		readResponse := []byte(`{"getWarehouse":{"name":"name2","connections":[{"uuid":"8cd5a"}]}}`)
+		readResponse := []byte(`{"getWarehouse":{"name":"name2","connections":[{"uuid":"8cd5a"}],"dataCollector":{"uuid":"dataCollector1"}}}`)
 		mcClient.On("ExecRaw", mock.Anything, readQuery, readVariables1).Return(readResponse, nil)
 	})
 	return &mcClient
