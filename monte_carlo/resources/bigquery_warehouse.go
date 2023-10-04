@@ -167,6 +167,20 @@ func (r *BigQueryWarehouseResource) Read(ctx context.Context, req resource.ReadR
 		return
 	}
 
+	readDataCollectorUuid := getResult.GetWarehouse.DataCollector.Uuid
+	confDataCollectorUuid := data.DataCollectorUuid.ValueString()
+	if readDataCollectorUuid != confDataCollectorUuid {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("Obtained BigQuery warehouse with [uuid: %s] but its Data Collector UUID does not match with "+
+				"configured value [obtained: %s, configured: %s]. BigQuery warehouse might have been moved to other "+
+				"Data Collector externally", data.Uuid.ValueString(), readDataCollectorUuid, confDataCollectorUuid),
+			"Since its not possible for this provider to update Data Collector of BigQuery warehouse, this resource "+
+				"cannot continue to function properly. It is recommended to change Data Collector UUID for this "+
+				"resource directly in the Terraform configuration",
+		)
+		return
+	}
+
 	readConnectionUuid := types.StringNull()
 	readServiceAccountKey := types.StringNull()
 	for _, connection := range getResult.GetWarehouse.Connections {

@@ -98,6 +98,9 @@ type GetWarehouse struct {
 			Uuid string `json:"uuid"`
 			Type string `json:"type"`
 		} `json:"connections"`
+		DataCollector struct {
+			Uuid string `json:"uuid"`
+		} `json:"dataCollector"`
 	} `json:"getWarehouse"`
 }
 
