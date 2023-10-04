@@ -1,4 +1,20 @@
 
+<a name="v0.1.2"></a>
+## v0.1.2
+
+> 2023-10-04
+
+- Full diff - **[v0.1.1...v0.1.2](https://github.com/kiwicom/terraform-provider-montecarlo/compare/v0.1.1...v0.1.2)**  
+
+### :books: Documentation (unchanged functionality)
+
+* **examples:** fixed provider instalation syntax and usage ([#33](https://github.com/kiwicom/terraform-provider-montecarlo/issues/33))
+
+### :bug: Bug Fixes
+
+* **warehouse|bigquery:** read operation - response missing dataCollector ([#32](https://github.com/kiwicom/terraform-provider-montecarlo/issues/32))
+
+
 <a name="v0.1.1"></a>
 ## v0.1.1
 
