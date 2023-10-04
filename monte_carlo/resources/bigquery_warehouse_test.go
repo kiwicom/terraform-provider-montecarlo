@@ -96,7 +96,7 @@ func initMonteCarloClient() client.MonteCarloClient {
 	})
 
 	// Read operations
-	readQuery := "query getWarehouse($uuid: UUID) { getWarehouse(uuid: $uuid) { name,connections{uuid,type} } }"
+	readQuery := "query getWarehouse($uuid: UUID) { getWarehouse(uuid: $uuid) { name,connections{uuid,type},dataCollector{uuid} } }"
 	readVariables1 := map[string]interface{}{"uuid": client.UUID("8bfc4")}
 	readResponse1 := []byte(`{"getWarehouse":{"name":"name1","connections":[{"uuid":"8cd5a"}],"dataCollector":{"uuid":"dataCollector1"}}}`)
 	mcClient.On("ExecRaw", mock.Anything, readQuery, readVariables1).Return(readResponse1, nil)
