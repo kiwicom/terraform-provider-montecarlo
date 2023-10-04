@@ -1,4 +1,15 @@
 
+<a name="v0.1.1"></a>
+## v0.1.1
+
+> 2023-10-04
+
+- Full diff - **[v0.1.0...v0.1.1](https://github.com/kiwicom/terraform-provider-montecarlo/compare/v0.1.0...v0.1.1)**  
+
+### :bug: Bug Fixes
+
+* **warehouse|bigquery:** read operation - inconsistent data collector ([#29](https://github.com/kiwicom/terraform-provider-montecarlo/issues/29))
+
 
 <a name="v0.1.0"></a>
 ## [v0.1.0](https://github.com/kiwicom/terraform-provider-montecarlo/compare/v0.0.1...v0.1.0)
