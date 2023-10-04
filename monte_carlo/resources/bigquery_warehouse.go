@@ -147,7 +147,7 @@ func (r *BigQueryWarehouseResource) Read(ctx context.Context, req resource.ReadR
 
 	getResult := client.GetWarehouse{}
 	variables := map[string]interface{}{"uuid": client.UUID(data.Uuid.ValueString())}
-	query := "query getWarehouse($uuid: UUID) { getWarehouse(uuid: $uuid) { name,connections{uuid,type} } }"
+	query := "query getWarehouse($uuid: UUID) { getWarehouse(uuid: $uuid) { name,connections{uuid,type},dataCollector{uuid} } }"
 
 	if bytes, err := r.client.ExecRaw(ctx, query, variables); err != nil && (bytes == nil || len(bytes) == 0) {
 		toPrint := fmt.Sprintf("MC client 'GetWarehouse' query result - %s", err.Error())
