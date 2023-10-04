@@ -1,8 +1,10 @@
 {{ range .Versions }}
 <a name="{{ .Tag.Name }}"></a>
-- Full diff - {{ if .Tag.Previous }}**[{{ .Tag.Previous.Name }}...{{ .Tag.Name }}]({{ $.Info.RepositoryURL }}/compare/{{ .Tag.Previous.Name }}...{{ .Tag.Name }})**{{ else }}{{ .Tag.Name }}{{ end }}  
+## {{ .Tag.Name }}
 
 > {{ datetime "2006-01-02" .Tag.Date }}
+
+- Full diff - {{ if .Tag.Previous }}**[{{ .Tag.Previous.Name }}...{{ .Tag.Name }}]({{ $.Info.RepositoryURL }}/compare/{{ .Tag.Previous.Name }}...{{ .Tag.Name }})**{{ else }}{{ .Tag.Name }}{{ end }}  
 
 {{ range .CommitGroups -}}
 ### {{ .Title }}

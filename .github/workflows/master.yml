@@ -66,6 +66,7 @@ jobs:
         run: |
           export CURR_TAG=$(git describe --tags --abbrev=0)
           sed -n '/<a name="'$CURR_TAG'"><\/a>/,/<a name="v/p' CHANGELOG.md | sed '$d' > release-notes.md
+          sed -i '/^## '$CURR_TAG'$/d' release-notes.md
           grep '<a name="'$CURR_TAG'"></a>' release-notes.md
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v6
