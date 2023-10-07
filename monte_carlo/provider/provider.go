@@ -101,6 +101,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 func (p *Provider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		resources.NewBigQueryWarehouseResource,
+		resources.NewDomainResource,
 	}
 }
 

@@ -124,3 +124,40 @@ type UpdateCredentials struct {
 		Success bool
 	} `graphql:"updateCredentials(changes: $changes, connectionId: $connectionId, shouldReplace: $shouldReplace, shouldValidate: $shouldValidate)"`
 }
+
+type TagPair struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+type TagKeyValuePairInput TagPair
+type TagKeyValuePairOutput TagPair
+
+type CreateOrUpdateDomain struct {
+	CreateOrUpdateDomain struct {
+		Domain struct {
+			Assignments []string
+			Tags        []TagKeyValuePairOutput
+			Name        string
+			Description string
+			Uuid        string
+		}
+	} `graphql:"createOrUpdateDomain(assignments: $assignments, tags: $tags, name: $name, description: $description, uuid: $uuid)"`
+}
+
+type GetDomain struct {
+	GetDomain *struct {
+		Uuid           string                  `json:"uuid"`
+		Name           string                  `json:"name"`
+		Description    string                  `json:"description"`
+		CreatedByEmail string                  `json:"createdByEmail"`
+		Tags           []TagKeyValuePairOutput `json:"tags"`
+		Assignments    []string                `json:"assignments"`
+	} `json:"getDomain"`
+}
+
+type DeleteDomain struct {
+	DeleteDomain struct {
+		Deleted uint64
+	} `graphql:"deleteDomain(uuid: $uuid)"`
+}
