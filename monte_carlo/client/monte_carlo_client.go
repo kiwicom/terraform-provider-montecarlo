@@ -158,6 +158,6 @@ type GetDomain struct {
 
 type DeleteDomain struct {
 	DeleteDomain struct {
-		Deleted uint64
+		Deleted int
 	} `graphql:"deleteDomain(uuid: $uuid)"`
 }
