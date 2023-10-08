@@ -16,7 +16,7 @@ import (
 )
 
 func TestAccBigQueryWarehouseResource(t *testing.T) {
-	providerContext := &common.ProviderContext{MonteCarloClient: initMonteCarloClient()}
+	providerContext := &common.ProviderContext{MonteCarloClient: initBigQueryWarehouseMonteCarloClient()}
 	providerFactories := map[string]func() (tfprotov6.ProviderServer, error){
 		"montecarlo": providerserver.NewProtocol6WithError(provider.New("test", providerContext)()),
 	}
@@ -26,7 +26,7 @@ func TestAccBigQueryWarehouseResource(t *testing.T) {
 		ProtoV6ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{ // Create and Read testing
-				Config: basicConfig("name1", "dataCollector1", "{}"),
+				Config: bigQueryWarehouseConfig("name1", "dataCollector1", "{}"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "uuid", "8bfc4"),
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "connection_uuid", "8cd5a"),
@@ -46,7 +46,7 @@ func TestAccBigQueryWarehouseResource(t *testing.T) {
 			},
 			// Update and Read testing
 			{
-				Config: basicConfig("name2", "dataCollector1", "{\"json\": \"json\"}"),
+				Config: bigQueryWarehouseConfig("name2", "dataCollector1", "{\"json\": \"json\"}"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "uuid", "8bfc4"),
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "connection_uuid", "8cd5a"),
@@ -60,7 +60,7 @@ func TestAccBigQueryWarehouseResource(t *testing.T) {
 	})
 }
 
-func basicConfig(name string, dcid string, saKey string) string {
+func bigQueryWarehouseConfig(name string, dcid string, saKey string) string {
 	return fmt.Sprintf(`
 provider "montecarlo" {
   account_service_key = {
@@ -78,7 +78,7 @@ resource "montecarlo_bigquery_warehouse" "test" {
 `, name, dcid, saKey)
 }
 
-func initMonteCarloClient() client.MonteCarloClient {
+func initBigQueryWarehouseMonteCarloClient() client.MonteCarloClient {
 	mcClient := cmock.MonteCarloClient{}
 	// Add connection operations
 	mcClient.On("Mutate", mock.Anything, mock.AnythingOfType("*client.TestBqCredentialsV2"), mock.Anything).Return(nil).Run(func(args mock.Arguments) {

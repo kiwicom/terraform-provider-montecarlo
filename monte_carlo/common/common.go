@@ -23,7 +23,7 @@ type TagModel struct {
 func (t TagModel) toTagPair() client.TagKeyValuePairInput {
 	return client.TagKeyValuePairInput{
 		Name:  t.Name.ValueString(),
-		Value: t.Name.ValueString(),
+		Value: t.Value.ValueString(),
 	}
 }
 
