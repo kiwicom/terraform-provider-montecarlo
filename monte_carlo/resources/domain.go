@@ -51,7 +51,9 @@ func (r *DomainResource) Metadata(ctx context.Context, req resource.MetadataRequ
 func (r *DomainResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "",
+		MarkdownDescription: "**(Beta version !!)** A named resource which lets you define a collection of tables or views by selecting " +
+			"a combination of tables, schemas or databases. Domains can be used to create notifications and authorization groups as " +
+			"a way to adjust the scope without having to redefine a list of tables every time.",
 		Attributes: map[string]schema.Attribute{
 			"uuid": schema.StringAttribute{
 				Computed:            true,
@@ -79,13 +81,13 @@ func (r *DomainResource) Schema(ctx context.Context, req resource.SchemaRequest,
 					Attributes: map[string]schema.Attribute{
 						"name": schema.StringAttribute{
 							Required:            true,
-							MarkdownDescription: "",
+							MarkdownDescription: "Tag name",
 						},
 						"value": schema.StringAttribute{
 							Computed:            true,
 							Optional:            true,
 							Default:             stringdefault.StaticString(""),
-							MarkdownDescription: "",
+							MarkdownDescription: "Tag value",
 						},
 					},
 				},
@@ -97,10 +99,11 @@ func (r *DomainResource) Schema(ctx context.Context, req resource.SchemaRequest,
 				),
 			},
 			"assignments": schema.ListAttribute{
-				Computed:            true,
-				Optional:            true,
-				ElementType:         types.StringType,
-				MarkdownDescription: "Objects assigned to domain (as MCONs).",
+				Computed:    true,
+				Optional:    true,
+				ElementType: types.StringType,
+				MarkdownDescription: "Objects assigned to domain (in MCONs format: " +
+					"MCON++{account_uuid}++{resource_uuid}++{object_type}++{object_id}).",
 				Default: listdefault.StaticValue(
 					types.ListValueMust(
 						types.StringType,
