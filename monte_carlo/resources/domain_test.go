@@ -38,6 +38,13 @@ func TestAccDomainResource(t *testing.T) {
 					resource.TestCheckResourceAttr("montecarlo_domain.test", "tags.1.value", ""),
 				),
 			},
+			{ // ImportState testing
+				ResourceName:                         "montecarlo_domain.test",
+				ImportState:                          true,
+				ImportStateVerify:                    true,
+				ImportStateId:                        "8bfc4",
+				ImportStateVerifyIdentifierAttribute: "uuid",
+			},
 		}},
 	)
 }
