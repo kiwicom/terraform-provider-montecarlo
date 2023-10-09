@@ -1,4 +1,21 @@
 
+<a name="v0.1.3"></a>
+## v0.1.3
+
+> 2023-10-09
+
+- Full diff - **[v0.1.2...v0.1.3](https://github.com/kiwicom/terraform-provider-montecarlo/compare/v0.1.2...v0.1.3)**  
+
+### :books: Documentation (unchanged functionality)
+
+* **resource|domain:** added docs and terraform examples ([#38](https://github.com/kiwicom/terraform-provider-montecarlo/issues/38))
+
+### :sparkles: Features
+
+* **resource|domain:** import state via domain uuid ([#37](https://github.com/kiwicom/terraform-provider-montecarlo/issues/37))
+* **resource|domain:** kick-off beta version implementation ([#35](https://github.com/kiwicom/terraform-provider-montecarlo/issues/35))
+
+
 <a name="v0.1.2"></a>
 ## v0.1.2
 
