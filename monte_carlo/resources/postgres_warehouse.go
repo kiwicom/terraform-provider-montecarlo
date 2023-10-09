@@ -2,7 +2,6 @@ package resources
 
 import (
 	"context"
-	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -15,46 +14,54 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-// Ensure provider defined types fully satisfy framework interfaces.
-var _ resource.Resource = &BigQueryWarehouseResource{}
-var _ resource.ResourceWithImportState = &BigQueryWarehouseResource{}
+var _ resource.Resource = &PostgresWarehouseResource{}
+var _ resource.ResourceWithImportState = &PostgresWarehouseResource{}
 
 // To simplify provider implementations, a named function can be created with the resource implementation.
-func NewBigQueryWarehouseResource() resource.Resource {
-	return &BigQueryWarehouseResource{}
+func NewPostgresWarehouseResource() resource.Resource {
+	return &PostgresWarehouseResource{}
 }
 
-// BigQueryWarehouseResource defines the resource implementation.
-type BigQueryWarehouseResource struct {
+// PostgresWarehouseResource defines the resource implementation.
+type PostgresWarehouseResource struct {
 	client client.MonteCarloClient
 }
 
-// BigQueryWarehouseResourceModel describes the resource data model according to its Schema.
-type BigQueryWarehouseResourceModel struct {
-	Uuid               types.String `tfsdk:"uuid"`
-	ConnectionUuid     types.String `tfsdk:"connection_uuid"`
-	Name               types.String `tfsdk:"name"`
-	DataCollectorUuid  types.String `tfsdk:"data_collector_uuid"`
-	ServiceAccountKey  types.String `tfsdk:"service_account_key"`
-	DeletionProtection types.Bool   `tfsdk:"deletion_protection"`
+// PostgresWarehouseResourceModel describes the resource data model according to its Schema.
+type PostgresWarehouseResourceModel struct {
+	Uuid               types.String  `tfsdk:"uuid"`
+	ConnectionUuid     types.String  `tfsdk:"connection_uuid"`
+	Name               types.String  `tfsdk:"name"`
+	DataCollectorUuid  types.String  `tfsdk:"data_collector_uuid"`
+	Configuration      Configuration `tfsdk:"configuration"`
+	DeletionProtection types.Bool    `tfsdk:"deletion_protection"`
 }
 
-func (r *BigQueryWarehouseResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_bigquery_warehouse"
+type Configuration struct {
+	Host     types.String `tfsdk:"host"`
+	Port     types.Int64  `tfsdk:"port"`
+	Name     types.String `tfsdk:"name"`
+	Username types.String `tfsdk:"username"`
+	Password types.String `tfsdk:"password"`
 }
 
-func (r *BigQueryWarehouseResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *PostgresWarehouseResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_postgres_warehouse"
+}
+
+func (r *PostgresWarehouseResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "This resource represents the integration of Monte Carlo with BigQuery data warehouse. " +
+		MarkdownDescription: "This resource represents the integration of Monte Carlo with Postgres data warehouse. " +
 			"While this resource is not responsible for handling data access and other operations, such as data filtering, " +
-			"it is responsible for managing the connection to BigQuery using the provided service account key.",
+			"it is responsible for managing the connection to Postgres using the provided configuration.",
 		Attributes: map[string]schema.Attribute{
 			"uuid": schema.StringAttribute{
 				Computed:            true,
@@ -67,14 +74,14 @@ func (r *BigQueryWarehouseResource) Schema(ctx context.Context, req resource.Sch
 			"connection_uuid": schema.StringAttribute{
 				Computed:            true,
 				Optional:            false,
-				MarkdownDescription: "Unique identifier of connection responsible for communication with BigQuery.",
+				MarkdownDescription: "Unique identifier of connection responsible for communication with Postgres.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"name": schema.StringAttribute{
 				Required:            true,
-				MarkdownDescription: "The name of the BigQuery warehouse as it will be presented in Monte Carlo.",
+				MarkdownDescription: "The name of the Postgre warehouse as it will be presented in Monte Carlo.",
 			},
 			"data_collector_uuid": schema.StringAttribute{
 				Required: true,
@@ -86,13 +93,44 @@ func (r *BigQueryWarehouseResource) Schema(ctx context.Context, req resource.Sch
 					stringplanmodifier.RequiresReplaceIfConfigured(),
 				},
 			},
-			"service_account_key": schema.StringAttribute{
-				Required:  true,
-				Sensitive: true,
-				MarkdownDescription: "Service account key used by the warehouse connection for authentication and " +
-					"authorization against BigQuery. The very same service account is used to grant required " +
-					"permissions to Monte Carlo BigQuery warehouse for the data access. For more information " +
-					"follow Monte Carlo documentation: https://docs.getmontecarlo.com/docs/bigquery",
+			"configuration": schema.SingleNestedAttribute{
+				Required: true,
+				MarkdownDescription: "Configuration used by the warehouse connection for connecting " +
+					"to the Postgres database. For more information follow Monte Carlo documentation: " +
+					"https://docs.getmontecarlo.com/docs/postgres",
+				Attributes: map[string]schema.Attribute{
+					"host": schema.StringAttribute{
+						Required:            true,
+						MarkdownDescription: "Database host",
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplaceIfConfigured(),
+						},
+					},
+					"port": schema.Int64Attribute{
+						Required:            true,
+						MarkdownDescription: "Database port",
+						PlanModifiers: []planmodifier.Int64{
+							int64planmodifier.RequiresReplaceIfConfigured(),
+						},
+					},
+					"name": schema.StringAttribute{
+						Required:            true,
+						MarkdownDescription: "Database name",
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplaceIfConfigured(),
+						},
+					},
+					"username": schema.StringAttribute{
+						Required:            true,
+						Sensitive:           true,
+						MarkdownDescription: "Login username",
+					},
+					"password": schema.StringAttribute{
+						Required:            true,
+						Sensitive:           true,
+						MarkdownDescription: "Login password",
+					},
+				},
 			},
 			"deletion_protection": schema.BoolAttribute{
 				Optional: true,
@@ -106,7 +144,7 @@ func (r *BigQueryWarehouseResource) Schema(ctx context.Context, req resource.Sch
 	}
 }
 
-func (r *BigQueryWarehouseResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *PostgresWarehouseResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return // prevent 'nil' panic during `terraform plan`
 	} else if pd, ok := req.ProviderData.(common.ProviderContext); ok {
@@ -119,8 +157,8 @@ func (r *BigQueryWarehouseResource) Configure(ctx context.Context, req resource.
 	}
 }
 
-func (r *BigQueryWarehouseResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var data BigQueryWarehouseResourceModel
+func (r *PostgresWarehouseResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var data PostgresWarehouseResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -134,12 +172,11 @@ func (r *BigQueryWarehouseResource) Create(ctx context.Context, req resource.Cre
 
 	data.Uuid = result.Uuid
 	data.ConnectionUuid = result.ConnectionUuid
-	data.Name = result.Name
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *BigQueryWarehouseResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var data BigQueryWarehouseResourceModel
+func (r *PostgresWarehouseResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var data PostgresWarehouseResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -171,10 +208,10 @@ func (r *BigQueryWarehouseResource) Read(ctx context.Context, req resource.ReadR
 	confDataCollectorUuid := data.DataCollectorUuid.ValueString()
 	if readDataCollectorUuid != confDataCollectorUuid {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("Obtained BigQuery warehouse with [uuid: %s] but its Data Collector UUID does not match with "+
-				"configured value [obtained: %s, configured: %s]. BigQuery warehouse might have been moved to other "+
+			fmt.Sprintf("Obtained Postgres warehouse with [uuid: %s] but its Data Collector UUID does not match with "+
+				"configured value [obtained: %s, configured: %s]. Postgres warehouse might have been moved to other "+
 				"Data Collector externally", data.Uuid.ValueString(), readDataCollectorUuid, confDataCollectorUuid),
-			"Since its not possible for this provider to update Data Collector of BigQuery warehouse, this resource "+
+			"Since its not possible for this provider to update Data Collector of Postgres warehouse, this resource "+
 				"cannot continue to function properly. It is recommended to change Data Collector UUID for this "+
 				"resource directly in the Terraform configuration",
 		)
@@ -182,22 +219,29 @@ func (r *BigQueryWarehouseResource) Read(ctx context.Context, req resource.ReadR
 	}
 
 	readConnectionUuid := types.StringNull()
-	readServiceAccountKey := types.StringNull()
+	readConfiguration := Configuration{
+		Host:     types.StringNull(),
+		Port:     types.Int64Null(),
+		Name:     types.StringNull(),
+		Username: types.StringNull(),
+		Password: types.StringNull(),
+	}
+
 	for _, connection := range getResult.GetWarehouse.Connections {
 		if connection.Uuid == data.ConnectionUuid.ValueString() {
 			readConnectionUuid = data.ConnectionUuid
-			readServiceAccountKey = data.ServiceAccountKey
+			readConfiguration = data.Configuration
 		}
 	}
 
 	data.ConnectionUuid = readConnectionUuid
-	data.ServiceAccountKey = readServiceAccountKey
+	data.Configuration = readConfiguration
 	data.Name = types.StringValue(getResult.GetWarehouse.Name)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *BigQueryWarehouseResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data BigQueryWarehouseResourceModel
+func (r *PostgresWarehouseResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var data PostgresWarehouseResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -213,10 +257,7 @@ func (r *BigQueryWarehouseResource) Update(ctx context.Context, req resource.Upd
 		to_print := fmt.Sprintf("MC client 'SetWarehouseName' mutation result - %s", err.Error())
 		resp.Diagnostics.AddError(to_print, "")
 		return
-	}
-
-	data.Name = types.StringValue(setNameResult.SetWarehouseName.Warehouse.Name)
-	if data.ConnectionUuid.IsUnknown() || data.ConnectionUuid.IsNull() {
+	} else if data.ConnectionUuid.IsUnknown() || data.ConnectionUuid.IsNull() {
 		if result, diags := r.addConnection(ctx, data); !diags.HasError() && diags.WarningsCount() <= 0 {
 			data.ConnectionUuid = result.ConnectionUuid
 		} else {
@@ -226,11 +267,15 @@ func (r *BigQueryWarehouseResource) Update(ctx context.Context, req resource.Upd
 	}
 
 	updateResult := client.UpdateCredentials{}
+	host := data.Configuration.Host.ValueString()
+	port := data.Configuration.Port.ValueInt64()
+	username := data.Configuration.Username.ValueString()
+	password := data.Configuration.Password.ValueString()
 	variables = map[string]interface{}{
-		"changes":        client.JSONString(data.ServiceAccountKey.ValueString()),
+		"changes":        client.JSONString(fmt.Sprintf(`{"db_type":"postgres", "host": "%s", "port": "%d", "user": "%s", "password": "%s"}`, host, port, username, password)),
 		"connectionId":   client.UUID(data.ConnectionUuid.ValueString()),
 		"shouldReplace":  true,
-		"shouldValidate": false,
+		"shouldValidate": true,
 	}
 
 	if err := r.client.Mutate(ctx, &updateResult, variables); err != nil {
@@ -246,8 +291,8 @@ func (r *BigQueryWarehouseResource) Update(ctx context.Context, req resource.Upd
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *BigQueryWarehouseResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var data BigQueryWarehouseResourceModel
+func (r *PostgresWarehouseResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var data PostgresWarehouseResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -276,7 +321,7 @@ func (r *BigQueryWarehouseResource) Delete(ctx context.Context, req resource.Del
 	}
 }
 
-func (r *BigQueryWarehouseResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *PostgresWarehouseResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	idsImported := strings.Split(req.ID, ",")
 	if len(idsImported) == 3 && idsImported[0] != "" && idsImported[1] != "" && idsImported[2] != "" {
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("uuid"), idsImported[0])...)
@@ -289,26 +334,26 @@ func (r *BigQueryWarehouseResource) ImportState(ctx context.Context, req resourc
 	}
 }
 
-func (r *BigQueryWarehouseResource) addConnection(ctx context.Context, data BigQueryWarehouseResourceModel) (*BigQueryWarehouseResourceModel, diag.Diagnostics) {
+func (r *PostgresWarehouseResource) addConnection(ctx context.Context, data PostgresWarehouseResourceModel) (*PostgresWarehouseResourceModel, diag.Diagnostics) {
 	var diagsResult diag.Diagnostics
-	type BqConnectionDetails map[string]interface{}
-	testResult := client.TestBqCredentialsV2{}
+	testResult := client.TestDatabaseCredentials{}
 	variables := map[string]interface{}{
-		"validationName": "save_credentials",
-		"connectionDetails": BqConnectionDetails{
-			"serviceJson": b64.StdEncoding.EncodeToString(
-				[]byte(data.ServiceAccountKey.ValueString()),
-			),
-		},
+		"connectionType": "transactional-db",
+		"dbType":         "postgres",
+		"host":           data.Configuration.Host.ValueString(),
+		"port":           data.Configuration.Port.ValueInt64(),
+		"dbName":         data.Configuration.Name.ValueString(),
+		"user":           data.Configuration.Username.ValueString(),
+		"password":       data.Configuration.Password.ValueString(),
 	}
 
 	if err := r.client.Mutate(ctx, &testResult, variables); err != nil {
-		toPrint := fmt.Sprintf("MC client 'TestBqCredentialsV2' mutation result - %s", err.Error())
+		toPrint := fmt.Sprintf("MC client 'TestDatabaseCredentials' mutation result - %s", err.Error())
 		diagsResult.AddError(toPrint, "")
 		return &data, diagsResult
-	} else if !testResult.TestBqCredentialsV2.ValidationResult.Success {
-		diags := bqTestDiagnosticToDiags(testResult.TestBqCredentialsV2.ValidationResult.Warnings)
-		diags = append(diags, bqTestDiagnosticToDiags(testResult.TestBqCredentialsV2.ValidationResult.Errors)...)
+	} else if !testResult.TestDatabaseCredentials.Success {
+		diags := databaseTestDiagnosticsToDiags(testResult.TestDatabaseCredentials.Warnings)
+		diags = append(diags, databaseTestDiagnosticsToDiags(testResult.TestDatabaseCredentials.Validations)...)
 		diagsResult.Append(diags...)
 		return &data, diagsResult
 	}
@@ -321,17 +366,17 @@ func (r *BigQueryWarehouseResource) addConnection(ctx context.Context, data BigQ
 	if warehouseUuid == nil || *warehouseUuid == "" {
 		warehouseUuid = nil
 		name = data.Name.ValueStringPointer()
-		temp := "bigquery"
+		temp := "transactional-db"
 		createWarehouseType = &temp
 	}
 
 	variables = map[string]interface{}{
 		"dcId":                (*client.UUID)(dataCollectorUuid),
 		"dwId":                (*client.UUID)(warehouseUuid),
-		"key":                 testResult.TestBqCredentialsV2.Key,
+		"key":                 testResult.TestDatabaseCredentials.Key,
 		"jobTypes":            []string{"metadata", "query_logs", "sql_query", "json_schema"},
 		"name":                name,
-		"connectionType":      "bigquery",
+		"connectionType":      "transactional-db",
 		"createWarehouseType": createWarehouseType,
 	}
 
@@ -343,21 +388,13 @@ func (r *BigQueryWarehouseResource) addConnection(ctx context.Context, data BigQ
 
 	data.Uuid = types.StringValue(addResult.AddConnection.Connection.Warehouse.Uuid)
 	data.ConnectionUuid = types.StringValue(addResult.AddConnection.Connection.Uuid)
-	data.Name = types.StringValue(addResult.AddConnection.Connection.Warehouse.Name)
 	return &data, diagsResult
 }
 
-func bqTestDiagnosticToDiags[T client.BqTestWarnings | client.BqTestErrors](in T) diag.Diagnostics {
+func databaseTestDiagnosticsToDiags(in []client.DatabaseTestDiagnostic) diag.Diagnostics {
 	var diags diag.Diagnostics
-	switch any(in).(type) {
-	case client.BqTestWarnings:
-		for _, value := range in {
-			diags.AddWarning(value.FriendlyMessage, value.Resolution)
-		}
-	case client.BqTestErrors:
-		for _, value := range in {
-			diags.AddError(value.FriendlyMessage, value.Resolution)
-		}
+	for _, value := range in {
+		diags.AddWarning(value.Message, value.Type)
 	}
 	return diags
 }

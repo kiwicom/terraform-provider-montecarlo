@@ -85,8 +85,8 @@ func initBigQueryWarehouseMonteCarloClient() client.MonteCarloClient {
 		arg := args.Get(1).(*client.TestBqCredentialsV2)
 		arg.TestBqCredentialsV2.Key = "testKey"
 		arg.TestBqCredentialsV2.ValidationResult.Success = true
-		arg.TestBqCredentialsV2.ValidationResult.Errors = client.Errors{}
-		arg.TestBqCredentialsV2.ValidationResult.Warnings = client.Warnings{}
+		arg.TestBqCredentialsV2.ValidationResult.Errors = client.BqTestErrors{}
+		arg.TestBqCredentialsV2.ValidationResult.Warnings = client.BqTestWarnings{}
 	})
 	mcClient.On("Mutate", mock.Anything, mock.AnythingOfType("*client.AddConnection"), mock.Anything).Return(nil).Run(func(args mock.Arguments) {
 		arg := args.Get(1).(*client.AddConnection)
