@@ -59,22 +59,22 @@ func (transport monteCarloTransport) RoundTrip(req *http.Request) (*http.Respons
 type UUID string
 type JSONString string
 
-type Diagnostic struct {
+type BqTestDiagnostic struct {
 	Cause           string
 	FriendlyMessage string
 	Resolution      string
 }
 
-type Warnings []Diagnostic
-type Errors []Diagnostic
+type BqTestWarnings []BqTestDiagnostic
+type BqTestErrors []BqTestDiagnostic
 
 type TestBqCredentialsV2 struct {
 	TestBqCredentialsV2 struct {
 		Key              string
 		ValidationResult struct {
 			Success  bool
-			Warnings Warnings
-			Errors   Errors
+			Warnings BqTestWarnings
+			Errors   BqTestErrors
 		}
 	} `graphql:"testBqCredentialsV2(validationName: $validationName, connectionDetails: $connectionDetails)"`
 }
@@ -160,4 +160,18 @@ type DeleteDomain struct {
 	DeleteDomain struct {
 		Deleted int
 	} `graphql:"deleteDomain(uuid: $uuid)"`
+}
+
+type DatabaseTestDiagnostic struct {
+	Message string
+	Type    string
+}
+
+type TestDatabaseCredentials struct {
+	TestDatabaseCredentials struct {
+		Key         string
+		Success     bool
+		Warnings    []DatabaseTestDiagnostic
+		Validations []DatabaseTestDiagnostic
+	} `graphql:"testDatabaseCredentials(connectionType: $connectionType, dbName: $dbName, dbType: $dbType, host: $host, port: $port, user: $user, password: $password)"`
 }
