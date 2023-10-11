@@ -175,3 +175,27 @@ type TestDatabaseCredentials struct {
 		Validations []DatabaseTestDiagnostic
 	} `graphql:"testDatabaseCredentials(connectionType: $connectionType, dbName: $dbName, dbType: $dbType, host: $host, port: $port, user: $user, password: $password)"`
 }
+
+type GetTables struct {
+	GetTables struct {
+		Edges []struct {
+			Node struct {
+				Mcon        string
+				ProjectName string
+				Dataset     string
+				TableId     string
+				Warehouse   struct {
+					Uuid    string
+					Account struct {
+						Uuid string
+					}
+				}
+			}
+		}
+		PageInfo struct {
+			StartCursor string
+			EndCursor   string
+			HasNextPage bool
+		}
+	} `graphql:"getTables(dwId: $dwId, first: $first, after: $after, isDeleted: $isDeleted, isExcluded: $isExcluded)"`
+}
