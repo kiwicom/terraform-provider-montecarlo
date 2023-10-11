@@ -116,16 +116,9 @@ func (r *DomainResource) Schema(ctx context.Context, req resource.SchemaRequest,
 }
 
 func (r *DomainResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return // prevent 'nil' panic during `terraform plan`
-	} else if pd, ok := req.ProviderData.(common.ProviderContext); ok {
-		r.client = pd.MonteCarloClient
-	} else {
-		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected ProviderContext, got: %T. Please report this issue to the provider developers.", req.ProviderData),
-		)
-	}
+	client, diags := common.Configure(req)
+	resp.Diagnostics.Append(diags...)
+	r.client = client
 }
 
 func (r *DomainResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -169,9 +162,8 @@ func (r *DomainResource) Read(ctx context.Context, req resource.ReadRequest, res
 
 	getResult := client.GetDomain{}
 	variables := map[string]interface{}{"uuid": client.UUID(data.Uuid.ValueString())}
-	query := "query getDomain($uuid: UUID!) { getDomain(uuid: $uuid) { uuid,name,description,tags{name,value},assignments,createdByEmail } }"
 
-	if bytes, err := r.client.ExecRaw(ctx, query, variables); err != nil && (bytes == nil || len(bytes) == 0) {
+	if bytes, err := r.client.ExecRaw(ctx, client.GetDomainQuery, variables); err != nil && (bytes == nil || len(bytes) == 0) {
 		toPrint := fmt.Sprintf("MC client 'GetDomain' query result - %s", err.Error())
 		resp.Diagnostics.AddError(toPrint, "")
 		return

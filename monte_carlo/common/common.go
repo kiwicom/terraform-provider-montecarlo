@@ -1,8 +1,13 @@
 package common
 
 import (
+	"fmt"
+
 	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/client"
 
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -48,4 +53,26 @@ func FromTagPairs(in []client.TagKeyValuePairOutput) []TagModel {
 		tagModels = append(tagModels, NewTagModel(element))
 	}
 	return tagModels
+}
+
+func Configure[Req resource.ConfigureRequest | datasource.ConfigureRequest](req Req) (client.MonteCarloClient, diag.Diagnostics) {
+	var providerData any
+	switch request := any(req).(type) {
+	case resource.ConfigureRequest:
+		providerData = request.ProviderData
+	case datasource.ConfigureRequest:
+		providerData = request.ProviderData
+	}
+
+	var diags diag.Diagnostics
+	if providerData == nil {
+		return nil, diags // prevent 'nil' panic during `terraform plan`
+	} else if pd, ok := providerData.(*ProviderContext); ok {
+		return pd.MonteCarloClient, diags
+	} else {
+		diags.AddError(
+			"Unexpected Resource Configure Type",
+			fmt.Sprintf("Expected *common.ProviderContext, got: %T. Please report this issue to the provider developers.", providerData))
+		return nil, diags
+	}
 }

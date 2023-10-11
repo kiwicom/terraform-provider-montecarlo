@@ -80,8 +80,8 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	}
 
 	if p.context != nil {
-		resp.DataSourceData = *p.context
-		resp.ResourceData = *p.context
+		resp.DataSourceData = p.context
+		resp.ResourceData = p.context
 		return
 	}
 
@@ -95,8 +95,8 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	}
 
 	p.context = &common.ProviderContext{MonteCarloClient: client}
-	resp.DataSourceData = *p.context
-	resp.ResourceData = *p.context
+	resp.DataSourceData = p.context
+	resp.ResourceData = p.context
 }
 
 func (p *Provider) Resources(ctx context.Context) []func() resource.Resource {

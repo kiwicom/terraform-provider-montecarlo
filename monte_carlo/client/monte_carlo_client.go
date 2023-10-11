@@ -104,6 +104,8 @@ type GetWarehouse struct {
 	} `json:"getWarehouse"`
 }
 
+const GetWarehouseQuery string = "query getWarehouse($uuid: UUID) { getWarehouse(uuid: $uuid) { name,connections{uuid,type},dataCollector{uuid} } }"
+
 type RemoveConnection struct {
 	RemoveConnection struct {
 		Success bool
@@ -155,6 +157,8 @@ type GetDomain struct {
 		Assignments    []string                `json:"assignments"`
 	} `json:"getDomain"`
 }
+
+const GetDomainQuery string = "query getDomain($uuid: UUID!) { getDomain(uuid: $uuid) { uuid,name,description,tags{name,value},assignments,createdByEmail } }"
 
 type DeleteDomain struct {
 	DeleteDomain struct {
