@@ -1,4 +1,17 @@
 
+<a name="v0.2.0-pre"></a>
+## v0.2.0-pre
+
+> 2023-10-11
+
+- Full diff - **[v0.1.3...v0.2.0-pre](https://github.com/kiwicom/terraform-provider-montecarlo/compare/v0.1.3...v0.2.0-pre)**  
+
+### :sparkles: Features
+
+* **data_sources:** warehouse exposing MCON's implementation ([#41](https://github.com/kiwicom/terraform-provider-montecarlo/issues/41))
+* **resource|postgres_warehouse:** kick-off beta version implementation ([#40](https://github.com/kiwicom/terraform-provider-montecarlo/issues/40))
+
+
 <a name="v0.1.3"></a>
 ## v0.1.3
 
