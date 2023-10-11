@@ -6,6 +6,7 @@ import (
 
 	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/client"
 	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/common"
+	datasources "github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/data_sources"
 	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/resources"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -108,7 +109,7 @@ func (p *Provider) Resources(ctx context.Context) []func() resource.Resource {
 
 func (p *Provider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
-		//NewExampleDataSource,
+		datasources.NewWarehouseDatasource,
 	}
 }
 
