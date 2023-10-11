@@ -96,10 +96,9 @@ func initBigQueryWarehouseMonteCarloClient() client.MonteCarloClient {
 	})
 
 	// Read operations
-	readQuery := "query getWarehouse($uuid: UUID) { getWarehouse(uuid: $uuid) { name,connections{uuid,type},dataCollector{uuid} } }"
 	readVariables1 := map[string]interface{}{"uuid": client.UUID("8bfc4")}
 	readResponse1 := []byte(`{"getWarehouse":{"name":"name1","connections":[{"uuid":"8cd5a"}],"dataCollector":{"uuid":"dataCollector1"}}}`)
-	mcClient.On("ExecRaw", mock.Anything, readQuery, readVariables1).Return(readResponse1, nil)
+	mcClient.On("ExecRaw", mock.Anything, client.GetWarehouseQuery, readVariables1).Return(readResponse1, nil)
 
 	// Delete operations
 	deleteVariables2 := map[string]interface{}{"connectionId": client.UUID("8cd5a")}
@@ -119,9 +118,9 @@ func initBigQueryWarehouseMonteCarloClient() client.MonteCarloClient {
 		arg := args.Get(1).(*client.UpdateCredentials)
 		arg.UpdateCredentials.Success = true
 		// after update, read operation must return new results
-		mcClient.On("ExecRaw", mock.Anything, readQuery, readVariables1).Unset()
+		mcClient.On("ExecRaw", mock.Anything, client.GetWarehouseQuery, readVariables1).Unset()
 		readResponse := []byte(`{"getWarehouse":{"name":"name2","connections":[{"uuid":"8cd5a"}],"dataCollector":{"uuid":"dataCollector1"}}}`)
-		mcClient.On("ExecRaw", mock.Anything, readQuery, readVariables1).Return(readResponse, nil)
+		mcClient.On("ExecRaw", mock.Anything, client.GetWarehouseQuery, readVariables1).Return(readResponse, nil)
 	})
 	return &mcClient
 }

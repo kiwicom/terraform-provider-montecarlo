@@ -101,10 +101,9 @@ func initDomainMonteCarloClient() client.MonteCarloClient {
 	})
 
 	readVariables1 := map[string]interface{}{"uuid": client.UUID("8bfc4")}
-	readQuery := "query getDomain($uuid: UUID!) { getDomain(uuid: $uuid) { uuid,name,description,tags{name,value},assignments,createdByEmail } }"
 	tagsResponse := `"tags":[{"name":"owner","value":"bi-internal"},{"name":"dataset_tables_1"}]`
 	readResponse1 := []byte(`{"getDomain":{"uuid":"8bfc4","name":"domain1","description":"Domain test description","assignments":[],` + tagsResponse + `}}`)
-	mcClient.On("ExecRaw", mock.Anything, readQuery, readVariables1).Return(readResponse1, nil)
+	mcClient.On("ExecRaw", mock.Anything, client.GetDomainQuery, readVariables1).Return(readResponse1, nil)
 
 	deleteVariables1 := map[string]interface{}{"uuid": client.UUID("8bfc4")}
 	mcClient.On("Mutate", mock.Anything, mock.AnythingOfType("*client.DeleteDomain"), deleteVariables1).Return(nil).Run(func(args mock.Arguments) {

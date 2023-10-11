@@ -107,16 +107,9 @@ func (r *BigQueryWarehouseResource) Schema(ctx context.Context, req resource.Sch
 }
 
 func (r *BigQueryWarehouseResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return // prevent 'nil' panic during `terraform plan`
-	} else if pd, ok := req.ProviderData.(common.ProviderContext); ok {
-		r.client = pd.MonteCarloClient
-	} else {
-		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected ProviderContext, got: %T. Please report this issue to the provider developers.", req.ProviderData),
-		)
-	}
+	client, diags := common.Configure(req)
+	resp.Diagnostics.Append(diags...)
+	r.client = client
 }
 
 func (r *BigQueryWarehouseResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -147,9 +140,8 @@ func (r *BigQueryWarehouseResource) Read(ctx context.Context, req resource.ReadR
 
 	getResult := client.GetWarehouse{}
 	variables := map[string]interface{}{"uuid": client.UUID(data.Uuid.ValueString())}
-	query := "query getWarehouse($uuid: UUID) { getWarehouse(uuid: $uuid) { name,connections{uuid,type},dataCollector{uuid} } }"
 
-	if bytes, err := r.client.ExecRaw(ctx, query, variables); err != nil && (bytes == nil || len(bytes) == 0) {
+	if bytes, err := r.client.ExecRaw(ctx, client.GetWarehouseQuery, variables); err != nil && (bytes == nil || len(bytes) == 0) {
 		toPrint := fmt.Sprintf("MC client 'GetWarehouse' query result - %s", err.Error())
 		resp.Diagnostics.AddError(toPrint, "")
 		return

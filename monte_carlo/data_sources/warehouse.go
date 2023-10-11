@@ -95,16 +95,9 @@ func (d *WarehouseDataSource) Schema(ctx context.Context, req datasource.SchemaR
 }
 
 func (d *WarehouseDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return // prevent 'nil' panic during `terraform plan`
-	} else if pd, ok := req.ProviderData.(common.ProviderContext); ok {
-		d.client = pd.MonteCarloClient
-	} else {
-		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected ProviderContext, got: %T. Please report this issue to the provider developers.", req.ProviderData),
-		)
-	}
+	client, diags := common.Configure(req)
+	resp.Diagnostics.Append(diags...)
+	d.client = client
 }
 
 func (d *WarehouseDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {

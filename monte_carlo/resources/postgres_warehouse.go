@@ -145,16 +145,9 @@ func (r *PostgresWarehouseResource) Schema(ctx context.Context, req resource.Sch
 }
 
 func (r *PostgresWarehouseResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return // prevent 'nil' panic during `terraform plan`
-	} else if pd, ok := req.ProviderData.(common.ProviderContext); ok {
-		r.client = pd.MonteCarloClient
-	} else {
-		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected ProviderContext, got: %T. Please report this issue to the provider developers.", req.ProviderData),
-		)
-	}
+	client, diags := common.Configure(req)
+	resp.Diagnostics.Append(diags...)
+	r.client = client
 }
 
 func (r *PostgresWarehouseResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -184,9 +177,8 @@ func (r *PostgresWarehouseResource) Read(ctx context.Context, req resource.ReadR
 
 	getResult := client.GetWarehouse{}
 	variables := map[string]interface{}{"uuid": client.UUID(data.Uuid.ValueString())}
-	query := "query getWarehouse($uuid: UUID) { getWarehouse(uuid: $uuid) { name,connections{uuid,type},dataCollector{uuid} } }"
 
-	if bytes, err := r.client.ExecRaw(ctx, query, variables); err != nil && (bytes == nil || len(bytes) == 0) {
+	if bytes, err := r.client.ExecRaw(ctx, client.GetWarehouseQuery, variables); err != nil && (bytes == nil || len(bytes) == 0) {
 		toPrint := fmt.Sprintf("MC client 'GetWarehouse' query result - %s", err.Error())
 		resp.Diagnostics.AddError(toPrint, "")
 		return
@@ -272,7 +264,9 @@ func (r *PostgresWarehouseResource) Update(ctx context.Context, req resource.Upd
 	username := data.Configuration.Username.ValueString()
 	password := data.Configuration.Password.ValueString()
 	variables = map[string]interface{}{
-		"changes":        client.JSONString(fmt.Sprintf(`{"db_type":"postgres", "host": "%s", "port": "%d", "user": "%s", "password": "%s"}`, host, port, username, password)),
+		"changes": client.JSONString(fmt.Sprintf(
+			`{"db_type":"postgres", "host": "%s", "port": "%d", "user": "%s", "password": "%s"}`,
+			host, port, username, password)),
 		"connectionId":   client.UUID(data.ConnectionUuid.ValueString()),
 		"shouldReplace":  true,
 		"shouldValidate": true,
