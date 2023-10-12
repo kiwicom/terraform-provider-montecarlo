@@ -18,7 +18,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -150,11 +149,12 @@ func (r *BigQueryWarehouseResource) Read(ctx context.Context, req resource.ReadR
 		resp.Diagnostics.AddError(toPrint, "")
 		return
 	} else if getResult.GetWarehouse == nil {
-		toPrint := "MC client 'GetWarehouse' query failed to find warehouse"
+		toPrint := fmt.Sprintf("MC client 'GetWarehouse' query failed to find warehouse [uuid: %s]. "+
+			"This resource will be removed from the Terraform state without deletion.", data.Uuid.ValueString())
 		if err != nil {
 			toPrint = fmt.Sprintf("%s - %s", toPrint, err.Error())
 		} // response missing warehouse data may or may not contain error
-		tflog.Error(ctx, toPrint)
+		resp.Diagnostics.AddWarning(toPrint, "")
 		resp.State.RemoveResource(ctx)
 		return
 	}
@@ -162,14 +162,12 @@ func (r *BigQueryWarehouseResource) Read(ctx context.Context, req resource.ReadR
 	readDataCollectorUuid := getResult.GetWarehouse.DataCollector.Uuid
 	confDataCollectorUuid := data.DataCollectorUuid.ValueString()
 	if readDataCollectorUuid != confDataCollectorUuid {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("Obtained BigQuery warehouse with [uuid: %s] but its Data Collector UUID does not match with "+
-				"configured value [obtained: %s, configured: %s]. BigQuery warehouse might have been moved to other "+
-				"Data Collector externally", data.Uuid.ValueString(), readDataCollectorUuid, confDataCollectorUuid),
-			"Since its not possible for this provider to update Data Collector of BigQuery warehouse, this resource "+
-				"cannot continue to function properly. It is recommended to change Data Collector UUID for this "+
-				"resource directly in the Terraform configuration",
-		)
+		resp.Diagnostics.AddWarning(fmt.Sprintf("Obtained Bigquery warehouse with [uuid: %s] but its Data "+
+			"Collector UUID does not match with configured value [obtained: %s, configured: %s]. BigQuery "+
+			"warehouse might have been moved to other Data Collector externally. This resource will be removed "+
+			"from the Terraform state without deletion.",
+			data.Uuid.ValueString(), readDataCollectorUuid, confDataCollectorUuid), "")
+		resp.State.RemoveResource(ctx)
 		return
 	}
 

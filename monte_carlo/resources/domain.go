@@ -18,7 +18,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -172,11 +171,12 @@ func (r *DomainResource) Read(ctx context.Context, req resource.ReadRequest, res
 		resp.Diagnostics.AddError(toPrint, "")
 		return
 	} else if getResult.GetDomain == nil {
-		toPrint := "MC client 'GetDomain' query failed to find domain"
+		toPrint := fmt.Sprintf("MC client 'GetDomain' query failed to find domain [uuid: %s]. "+
+			"This resource will be removed from the Terraform state without deletion.", data.Uuid.ValueString())
 		if err != nil {
 			toPrint = fmt.Sprintf("%s - %s", toPrint, err.Error())
 		} // response missing domain data may or may not contain error
-		tflog.Error(ctx, toPrint)
+		resp.Diagnostics.AddWarning(toPrint, "")
 		resp.State.RemoveResource(ctx)
 		return
 	}
