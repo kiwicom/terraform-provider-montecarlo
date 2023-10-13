@@ -104,6 +104,10 @@ type GetWarehouse struct {
 	} `json:"getWarehouse"`
 }
 
+const BigQueryConnectionType = "bigquery"
+const BigQueryConnectionTypeResponse = "BIGQUERY"
+const TransactionalConnectionType = "transactional-db"
+const TransactionalConnectionTypeResponse = "TRANSACTIONAL_DB"
 const GetWarehouseQuery string = "query getWarehouse($uuid: UUID) { getWarehouse(uuid: $uuid) { name,connections{uuid,type},dataCollector{uuid} } }"
 
 type RemoveConnection struct {

@@ -12,13 +12,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -41,7 +40,7 @@ type DomainResourceModel struct {
 	Name        types.String      `tfsdk:"name"`
 	Description types.String      `tfsdk:"description"`
 	Tags        []common.TagModel `tfsdk:"tags"`
-	Assignments types.List        `tfsdk:"assignments"`
+	Assignments []types.String    `tfsdk:"assignments"`
 }
 
 func (r *DomainResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -73,7 +72,7 @@ func (r *DomainResource) Schema(ctx context.Context, req resource.SchemaRequest,
 				Default:             stringdefault.StaticString(""),
 				MarkdownDescription: "Description of the domain as it will be presented in Monte Carlo.",
 			},
-			"tags": schema.ListNestedAttribute{
+			"tags": schema.SetNestedAttribute{
 				Computed:            true,
 				Optional:            true,
 				MarkdownDescription: "Filter by tag key/value pairs for tables.",
@@ -91,21 +90,21 @@ func (r *DomainResource) Schema(ctx context.Context, req resource.SchemaRequest,
 						},
 					},
 				},
-				Default: listdefault.StaticValue(
-					types.ListValueMust(
+				Default: setdefault.StaticValue(
+					types.SetValueMust(
 						types.ObjectType{},
 						[]attr.Value{},
 					),
 				),
 			},
-			"assignments": schema.ListAttribute{
+			"assignments": schema.SetAttribute{
 				Computed:    true,
 				Optional:    true,
 				ElementType: types.StringType,
 				MarkdownDescription: "Objects assigned to domain (in MCONs format: " +
 					"MCON++{account_uuid}++{resource_uuid}++{object_type}++{object_id}).",
-				Default: listdefault.StaticValue(
-					types.ListValueMust(
+				Default: setdefault.StaticValue(
+					types.SetValueMust(
 						types.StringType,
 						[]attr.Value{},
 					),
@@ -128,16 +127,10 @@ func (r *DomainResource) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
-	assignments := make([]types.String, 0, len(data.Assignments.Elements()))
-	resp.Diagnostics.Append(data.Assignments.ElementsAs(ctx, &assignments, false)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	createResult := client.CreateOrUpdateDomain{}
 	variables := map[string]interface{}{
 		"uuid":        (*client.UUID)(nil),
-		"assignments": normalize(assignments),
+		"assignments": normalize(data.Assignments),
 		"tags":        common.ToTagPairs(data.Tags),
 		"name":        data.Name.ValueString(),
 		"description": data.Description.ValueString(),
@@ -172,22 +165,18 @@ func (r *DomainResource) Read(ctx context.Context, req resource.ReadRequest, res
 		resp.Diagnostics.AddError(toPrint, "")
 		return
 	} else if getResult.GetDomain == nil {
-		toPrint := "MC client 'GetDomain' query failed to find domain"
+		toPrint := fmt.Sprintf("MC client 'GetDomain' query failed to find domain [uuid: %s]. "+
+			"This resource will be removed from the Terraform state without deletion.", data.Uuid.ValueString())
 		if err != nil {
 			toPrint = fmt.Sprintf("%s - %s", toPrint, err.Error())
 		} // response missing domain data may or may not contain error
-		tflog.Error(ctx, toPrint)
+		resp.Diagnostics.AddWarning(toPrint, "")
 		resp.State.RemoveResource(ctx)
 		return
 	}
 
-	assignments, diags := types.ListValueFrom(ctx, types.StringType, getResult.GetDomain.Assignments)
-	if resp.Diagnostics.Append(diags...); resp.Diagnostics.HasError() {
-		return
-	}
-
 	data.Tags = common.FromTagPairs(getResult.GetDomain.Tags)
-	data.Assignments = assignments
+	data.Assignments = denormalize(getResult.GetDomain.Assignments)
 	data.Name = types.StringValue(getResult.GetDomain.Name)
 	data.Description = types.StringValue(getResult.GetDomain.Description)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -200,16 +189,10 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 		return
 	}
 
-	assignments := make([]types.String, 0, len(data.Assignments.Elements()))
-	resp.Diagnostics.Append(data.Assignments.ElementsAs(ctx, &assignments, false)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	createResult := client.CreateOrUpdateDomain{}
 	variables := map[string]interface{}{
 		"uuid":        client.UUID(data.Uuid.ValueString()),
-		"assignments": normalize(assignments),
+		"assignments": normalize(data.Assignments),
 		"tags":        common.ToTagPairs(data.Tags),
 		"name":        data.Name.ValueString(),
 		"description": data.Description.ValueString(),
@@ -253,6 +236,14 @@ func normalize(in []basetypes.StringValue) []string {
 	res := make([]string, 0, len(in))
 	for _, element := range in {
 		res = append(res, element.ValueString())
+	}
+	return res
+}
+
+func denormalize(in []string) []types.String {
+	res := make([]types.String, 0, len(in))
+	for _, element := range in {
+		res = append(res, types.StringValue(element))
 	}
 	return res
 }
