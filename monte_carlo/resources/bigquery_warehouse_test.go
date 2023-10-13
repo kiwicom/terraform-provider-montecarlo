@@ -31,7 +31,7 @@ func TestAccBigQueryWarehouseResource(t *testing.T) {
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "uuid", "8bfc4"),
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "connection_uuid", "8cd5a"),
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "name", "name1"),
-					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "data_collector_uuid", "dataCollector1"),
+					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "collector_uuid", "dataCollector1"),
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "service_account_key", "{}"),
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "deletion_protection", "false"),
 				),
@@ -51,7 +51,7 @@ func TestAccBigQueryWarehouseResource(t *testing.T) {
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "uuid", "8bfc4"),
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "connection_uuid", "8cd5a"),
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "name", "name2"),
-					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "data_collector_uuid", "dataCollector1"),
+					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "collector_uuid", "dataCollector1"),
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "service_account_key", "{\"json\": \"json\"}"),
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "deletion_protection", "false"),
 				),
@@ -71,7 +71,7 @@ provider "montecarlo" {
 
 resource "montecarlo_bigquery_warehouse" "test" {
   name                = %[1]q
-  data_collector_uuid = %[2]q
+  collector_uuid      = %[2]q
   service_account_key = %[3]q
   deletion_protection = false
 }
@@ -97,7 +97,8 @@ func initBigQueryWarehouseMonteCarloClient() client.MonteCarloClient {
 
 	// Read operations
 	readVariables1 := map[string]interface{}{"uuid": client.UUID("8bfc4")}
-	readResponse1 := []byte(`{"getWarehouse":{"name":"name1","connections":[{"uuid":"8cd5a"}],"dataCollector":{"uuid":"dataCollector1"}}}`)
+	readResponse1 := []byte(fmt.Sprintf(`{"getWarehouse":{"name":"name1","connections":[{"uuid":"8cd5a",`+
+		`"type":"%s"}],"dataCollector":{"uuid":"dataCollector1"}}}`, client.BigQueryConnectionTypeResponse))
 	mcClient.On("ExecRaw", mock.Anything, client.GetWarehouseQuery, readVariables1).Return(readResponse1, nil)
 
 	// Delete operations
@@ -119,7 +120,8 @@ func initBigQueryWarehouseMonteCarloClient() client.MonteCarloClient {
 		arg.UpdateCredentials.Success = true
 		// after update, read operation must return new results
 		mcClient.On("ExecRaw", mock.Anything, client.GetWarehouseQuery, readVariables1).Unset()
-		readResponse := []byte(`{"getWarehouse":{"name":"name2","connections":[{"uuid":"8cd5a"}],"dataCollector":{"uuid":"dataCollector1"}}}`)
+		readResponse := []byte(fmt.Sprintf(`{"getWarehouse":{"name":"name2","connections":[{"uuid":"8cd5a",`+
+			`"type":"%s"}],"dataCollector":{"uuid":"dataCollector1"}}}`, client.BigQueryConnectionTypeResponse))
 		mcClient.On("ExecRaw", mock.Anything, client.GetWarehouseQuery, readVariables1).Return(readResponse, nil)
 	})
 	return &mcClient

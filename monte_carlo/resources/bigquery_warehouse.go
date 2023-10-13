@@ -39,7 +39,7 @@ type BigQueryWarehouseResourceModel struct {
 	Uuid               types.String `tfsdk:"uuid"`
 	ConnectionUuid     types.String `tfsdk:"connection_uuid"`
 	Name               types.String `tfsdk:"name"`
-	DataCollectorUuid  types.String `tfsdk:"data_collector_uuid"`
+	CollectorUuid      types.String `tfsdk:"collector_uuid"`
 	ServiceAccountKey  types.String `tfsdk:"service_account_key"`
 	DeletionProtection types.Bool   `tfsdk:"deletion_protection"`
 }
@@ -75,7 +75,7 @@ func (r *BigQueryWarehouseResource) Schema(ctx context.Context, req resource.Sch
 				Required:            true,
 				MarkdownDescription: "The name of the BigQuery warehouse as it will be presented in Monte Carlo.",
 			},
-			"data_collector_uuid": schema.StringAttribute{
+			"collector_uuid": schema.StringAttribute{
 				Required: true,
 				MarkdownDescription: "Unique identifier of data collector this warehouse will be attached to. " +
 					"Its not possible to change data collectors of already created warehouses, therefore if Terraform " +
@@ -119,8 +119,8 @@ func (r *BigQueryWarehouseResource) Create(ctx context.Context, req resource.Cre
 	}
 
 	result, diags := r.addConnection(ctx, data)
-	if diags.HasError() || diags.WarningsCount() > 0 {
-		resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(diags...)
+	if result == nil {
 		return
 	}
 
@@ -159,14 +159,14 @@ func (r *BigQueryWarehouseResource) Read(ctx context.Context, req resource.ReadR
 		return
 	}
 
-	readDataCollectorUuid := getResult.GetWarehouse.DataCollector.Uuid
-	confDataCollectorUuid := data.DataCollectorUuid.ValueString()
-	if readDataCollectorUuid != confDataCollectorUuid {
-		resp.Diagnostics.AddWarning(fmt.Sprintf("Obtained Bigquery warehouse with [uuid: %s] but its Data "+
-			"Collector UUID does not match with configured value [obtained: %s, configured: %s]. BigQuery "+
-			"warehouse might have been moved to other Data Collector externally. This resource will be removed "+
+	readCollectorUuid := getResult.GetWarehouse.DataCollector.Uuid
+	confCollectorUuid := data.CollectorUuid.ValueString()
+	if readCollectorUuid != confCollectorUuid {
+		resp.Diagnostics.AddWarning(fmt.Sprintf("Obtained warehouse with [uuid: %s] but its Data "+
+			"Collector UUID does not match with configured value [obtained: %s, configured: %s]. Warehouse "+
+			"might have been moved to other Data Collector externally. This resource will be removed "+
 			"from the Terraform state without deletion.",
-			data.Uuid.ValueString(), readDataCollectorUuid, confDataCollectorUuid), "")
+			data.Uuid.ValueString(), readCollectorUuid, confCollectorUuid), "")
 		resp.State.RemoveResource(ctx)
 		return
 	}
@@ -175,6 +175,13 @@ func (r *BigQueryWarehouseResource) Read(ctx context.Context, req resource.ReadR
 	readServiceAccountKey := types.StringNull()
 	for _, connection := range getResult.GetWarehouse.Connections {
 		if connection.Uuid == data.ConnectionUuid.ValueString() {
+			if connection.Type != client.BigQueryConnectionTypeResponse {
+				resp.Diagnostics.AddError(
+					fmt.Sprintf("Obtained Warehouse [uuid: %s, connection_uuid: %s] but got unexpected connection "+
+						"type '%s'.", data.Uuid.ValueString(), connection.Uuid, connection.Type),
+					"Users can manually fix remote state or delete this resource from the Terraform configuration.")
+				return
+			}
 			readConnectionUuid = data.ConnectionUuid
 			readServiceAccountKey = data.ServiceAccountKey
 		}
@@ -205,9 +212,9 @@ func (r *BigQueryWarehouseResource) Update(ctx context.Context, req resource.Upd
 		return
 	}
 
-	data.Name = types.StringValue(setNameResult.SetWarehouseName.Warehouse.Name)
 	if data.ConnectionUuid.IsUnknown() || data.ConnectionUuid.IsNull() {
-		if result, diags := r.addConnection(ctx, data); !diags.HasError() && diags.WarningsCount() <= 0 {
+		if result, diags := r.addConnection(ctx, data); result != nil {
+			resp.Diagnostics.Append(diags...)
 			data.ConnectionUuid = result.ConnectionUuid
 		} else {
 			resp.Diagnostics.Append(diags...)
@@ -220,7 +227,7 @@ func (r *BigQueryWarehouseResource) Update(ctx context.Context, req resource.Upd
 		"changes":        client.JSONString(data.ServiceAccountKey.ValueString()),
 		"connectionId":   client.UUID(data.ConnectionUuid.ValueString()),
 		"shouldReplace":  true,
-		"shouldValidate": false,
+		"shouldValidate": true,
 	}
 
 	if err := r.client.Mutate(ctx, &updateResult, variables); err != nil {
@@ -271,7 +278,7 @@ func (r *BigQueryWarehouseResource) ImportState(ctx context.Context, req resourc
 	if len(idsImported) == 3 && idsImported[0] != "" && idsImported[1] != "" && idsImported[2] != "" {
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("uuid"), idsImported[0])...)
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("connection_uuid"), idsImported[1])...)
-		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("data_collector_uuid"), idsImported[2])...)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("collector_uuid"), idsImported[2])...)
 	} else {
 		resp.Diagnostics.AddError("Unexpected Import Identifier", fmt.Sprintf(
 			"Expected import identifier with format: <warehouse_uuid>,<connection_uuid>,<data_collector_uuid>. Got: %q", req.ID),
@@ -295,40 +302,40 @@ func (r *BigQueryWarehouseResource) addConnection(ctx context.Context, data BigQ
 	if err := r.client.Mutate(ctx, &testResult, variables); err != nil {
 		toPrint := fmt.Sprintf("MC client 'TestBqCredentialsV2' mutation result - %s", err.Error())
 		diagsResult.AddError(toPrint, "")
-		return &data, diagsResult
+		return nil, diagsResult
 	} else if !testResult.TestBqCredentialsV2.ValidationResult.Success {
 		diags := bqTestDiagnosticToDiags(testResult.TestBqCredentialsV2.ValidationResult.Warnings)
 		diags = append(diags, bqTestDiagnosticToDiags(testResult.TestBqCredentialsV2.ValidationResult.Errors)...)
 		diagsResult.Append(diags...)
-		return &data, diagsResult
+		return nil, diagsResult
 	}
 
 	addResult := client.AddConnection{}
 	var name, createWarehouseType *string = nil, nil
 	warehouseUuid := data.Uuid.ValueStringPointer()
-	dataCollectorUuid := data.DataCollectorUuid.ValueStringPointer()
+	collectorUuid := data.CollectorUuid.ValueStringPointer()
 
 	if warehouseUuid == nil || *warehouseUuid == "" {
 		warehouseUuid = nil
 		name = data.Name.ValueStringPointer()
-		temp := "bigquery"
+		temp := client.BigQueryConnectionType
 		createWarehouseType = &temp
 	}
 
 	variables = map[string]interface{}{
-		"dcId":                (*client.UUID)(dataCollectorUuid),
+		"dcId":                (*client.UUID)(collectorUuid),
 		"dwId":                (*client.UUID)(warehouseUuid),
 		"key":                 testResult.TestBqCredentialsV2.Key,
 		"jobTypes":            []string{"metadata", "query_logs", "sql_query", "json_schema"},
 		"name":                name,
-		"connectionType":      "bigquery",
+		"connectionType":      client.BigQueryConnectionType,
 		"createWarehouseType": createWarehouseType,
 	}
 
 	if err := r.client.Mutate(ctx, &addResult, variables); err != nil {
 		toPrint := fmt.Sprintf("MC client 'AddConnection' mutation result - %s", err.Error())
 		diagsResult.AddError(toPrint, "")
-		return &data, diagsResult
+		return nil, diagsResult
 	}
 
 	data.Uuid = types.StringValue(addResult.AddConnection.Connection.Warehouse.Uuid)

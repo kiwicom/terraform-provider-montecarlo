@@ -32,10 +32,14 @@ func TestAccDomainResource(t *testing.T) {
 					resource.TestCheckResourceAttr("montecarlo_domain.test", "name", "domain1"),
 					resource.TestCheckResourceAttr("montecarlo_domain.test", "description", "Domain test description"),
 					resource.TestCheckResourceAttr("montecarlo_domain.test", "assignments.#", "0"),
-					resource.TestCheckResourceAttr("montecarlo_domain.test", "tags.0.name", "owner"),
-					resource.TestCheckResourceAttr("montecarlo_domain.test", "tags.0.value", "bi-internal"),
-					resource.TestCheckResourceAttr("montecarlo_domain.test", "tags.1.name", "dataset_tables_1"),
-					resource.TestCheckResourceAttr("montecarlo_domain.test", "tags.1.value", ""),
+					resource.TestCheckResourceAttr("montecarlo_domain.test", "tags.#", "2"),
+					resource.TestCheckTypeSetElemNestedAttrs("montecarlo_domain.test", "tags.*", map[string]string{
+						"name": "dataset_tables_1",
+					}),
+					resource.TestCheckTypeSetElemNestedAttrs("montecarlo_domain.test", "tags.*", map[string]string{
+						"name":  "owner",
+						"value": "bi-internal",
+					}),
 				),
 			},
 			{ // ImportState testing
@@ -76,19 +80,11 @@ resource "montecarlo_domain" "test" {
 
 func initDomainMonteCarloClient() client.MonteCarloClient {
 	mcClient := cmock.MonteCarloClient{}
-	tags := []client.TagKeyValuePairInput{
-		{Name: "owner", Value: "bi-internal"},
-		{Name: "dataset_tables_1"},
-	}
-	createVariables1 := map[string]interface{}{
-		"uuid":        (*client.UUID)(nil),
-		"assignments": []string{},
-		"tags":        tags,
-		"name":        "domain1",
-		"description": "Domain test description",
-	}
-
-	mcClient.On("Mutate", mock.Anything, mock.AnythingOfType("*client.CreateOrUpdateDomain"), createVariables1).Return(nil).Run(func(args mock.Arguments) {
+	mcClient.On("Mutate", mock.Anything, mock.AnythingOfType("*client.CreateOrUpdateDomain"), mock.MatchedBy(func(in map[string]interface{}) bool {
+		return in["uuid"] == (*client.UUID)(nil) &&
+			in["name"] == "domain1" &&
+			in["description"] == "Domain test description"
+	})).Return(nil).Run(func(args mock.Arguments) {
 		arg := args.Get(1).(*client.CreateOrUpdateDomain)
 		arg.CreateOrUpdateDomain.Domain.Uuid = "8bfc4"
 		arg.CreateOrUpdateDomain.Domain.Name = "domain1"

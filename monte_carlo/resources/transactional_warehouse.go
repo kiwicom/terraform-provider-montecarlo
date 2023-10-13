@@ -15,7 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -41,7 +40,7 @@ type TransactionalWarehouseResourceModel struct {
 	ConnectionUuid     types.String  `tfsdk:"connection_uuid"`
 	Name               types.String  `tfsdk:"name"`
 	DbType             types.String  `tfsdk:"db_type"`
-	DataCollectorUuid  types.String  `tfsdk:"data_collector_uuid"`
+	CollectorUuid      types.String  `tfsdk:"collector_uuid"`
 	Configuration      Configuration `tfsdk:"configuration"`
 	DeletionProtection types.Bool    `tfsdk:"deletion_protection"`
 }
@@ -49,7 +48,7 @@ type TransactionalWarehouseResourceModel struct {
 type Configuration struct {
 	Host        types.String `tfsdk:"host"`
 	Port        types.Int64  `tfsdk:"port"`
-	Name        types.String `tfsdk:"name"`
+	Database    types.String `tfsdk:"database"`
 	Credentials Credentials  `tfsdk:"credentials"`
 }
 
@@ -93,13 +92,13 @@ func (r *TransactionalWarehouseResource) Schema(ctx context.Context, req resourc
 				Required:            true,
 				MarkdownDescription: "",
 				Validators: []validator.String{
-					stringvalidator.OneOf("POSTGRES", "MYSQL", "SQL_SERVER"),
+					stringvalidator.OneOf("POSTGRES", "MYSQL", "SQL-SERVER"),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplaceIfConfigured(),
 				},
 			},
-			"data_collector_uuid": schema.StringAttribute{
+			"collector_uuid": schema.StringAttribute{
 				Required: true,
 				MarkdownDescription: "Unique identifier of data collector this warehouse will be attached to. " +
 					"Its not possible to change data collectors of already created warehouses, therefore if Terraform " +
@@ -118,18 +117,12 @@ func (r *TransactionalWarehouseResource) Schema(ctx context.Context, req resourc
 					"host": schema.StringAttribute{
 						Required:            true,
 						MarkdownDescription: "Database host",
-						PlanModifiers: []planmodifier.String{
-							stringplanmodifier.RequiresReplaceIfConfigured(),
-						},
 					},
 					"port": schema.Int64Attribute{
 						Required:            true,
 						MarkdownDescription: "Database port",
-						PlanModifiers: []planmodifier.Int64{
-							int64planmodifier.RequiresReplaceIfConfigured(),
-						},
 					},
-					"name": schema.StringAttribute{
+					"database": schema.StringAttribute{
 						Required:            true,
 						MarkdownDescription: "Database name",
 						PlanModifiers: []planmodifier.String{
@@ -180,8 +173,8 @@ func (r *TransactionalWarehouseResource) Create(ctx context.Context, req resourc
 	}
 
 	result, diags := r.addConnection(ctx, data)
-	if diags.HasError() || diags.WarningsCount() > 0 {
-		resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(diags...)
+	if result == nil {
 		return
 	}
 
@@ -219,23 +212,23 @@ func (r *TransactionalWarehouseResource) Read(ctx context.Context, req resource.
 		return
 	}
 
-	readDataCollectorUuid := getResult.GetWarehouse.DataCollector.Uuid
-	confDataCollectorUuid := data.DataCollectorUuid.ValueString()
-	if readDataCollectorUuid != confDataCollectorUuid {
+	readCollectorUuid := getResult.GetWarehouse.DataCollector.Uuid
+	confCollectorUuid := data.CollectorUuid.ValueString()
+	if readCollectorUuid != confCollectorUuid {
 		resp.Diagnostics.AddWarning(fmt.Sprintf("Obtained Transactional warehouse with [uuid: %s] but its Data "+
 			"Collector UUID does not match with configured value [obtained: %s, configured: %s]. Transactional "+
 			"warehouse might have been moved to other Data Collector externally. This resource will be removed "+
 			"from the Terraform state without deletion.",
-			data.Uuid.ValueString(), readDataCollectorUuid, confDataCollectorUuid), "")
+			data.Uuid.ValueString(), readCollectorUuid, confCollectorUuid), "")
 		resp.State.RemoveResource(ctx)
 		return
 	}
 
 	readConnectionUuid := types.StringNull()
 	readConfiguration := Configuration{
-		Host: types.StringNull(),
-		Port: types.Int64Null(),
-		Name: types.StringNull(),
+		Host:     types.StringNull(),
+		Port:     types.Int64Null(),
+		Database: types.StringNull(),
 		Credentials: Credentials{
 			Username: types.StringNull(),
 			Password: types.StringNull(),
@@ -244,6 +237,13 @@ func (r *TransactionalWarehouseResource) Read(ctx context.Context, req resource.
 
 	for _, connection := range getResult.GetWarehouse.Connections {
 		if connection.Uuid == data.ConnectionUuid.ValueString() {
+			if connection.Type != client.TransactionalConnectionTypeResponse {
+				resp.Diagnostics.AddError(
+					fmt.Sprintf("Obtained Warehouse [uuid: %s, connection_uuid: %s] but got unexpected connection "+
+						"type '%s'", data.Uuid.ValueString(), connection.Uuid, connection.Type),
+					"Users can manually fix remote state or delete this resource from the Terraform configuration.")
+				return
+			}
 			readConnectionUuid = data.ConnectionUuid
 			readConfiguration = data.Configuration
 		}
@@ -273,7 +273,8 @@ func (r *TransactionalWarehouseResource) Update(ctx context.Context, req resourc
 		resp.Diagnostics.AddError(to_print, "")
 		return
 	} else if data.ConnectionUuid.IsUnknown() || data.ConnectionUuid.IsNull() {
-		if result, diags := r.addConnection(ctx, data); !diags.HasError() && diags.WarningsCount() <= 0 {
+		if result, diags := r.addConnection(ctx, data); result != nil {
+			resp.Diagnostics.Append(diags...)
 			data.ConnectionUuid = result.ConnectionUuid
 		} else {
 			resp.Diagnostics.Append(diags...)
@@ -287,6 +288,7 @@ func (r *TransactionalWarehouseResource) Update(ctx context.Context, req resourc
 	dbType := strings.ToLower(data.DbType.ValueString())
 	username := data.Configuration.Credentials.Username.ValueString()
 	password := data.Configuration.Credentials.Password.ValueString()
+
 	variables = map[string]interface{}{
 		"changes": client.JSONString(fmt.Sprintf(
 			`{"db_type":"%s", "host": "%s", "port": "%d", "user": "%s", "password": "%s"}`,
@@ -344,7 +346,7 @@ func (r *TransactionalWarehouseResource) ImportState(ctx context.Context, req re
 	if len(idsImported) == 3 && idsImported[0] != "" && idsImported[1] != "" && idsImported[2] != "" {
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("uuid"), idsImported[0])...)
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("connection_uuid"), idsImported[1])...)
-		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("data_collector_uuid"), idsImported[2])...)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("collector_uuid"), idsImported[2])...)
 	} else {
 		resp.Diagnostics.AddError("Unexpected Import Identifier", fmt.Sprintf(
 			"Expected import identifier with format: <warehouse_uuid>,<connection_uuid>,<data_collector_uuid>. Got: %q", req.ID),
@@ -356,11 +358,11 @@ func (r *TransactionalWarehouseResource) addConnection(ctx context.Context, data
 	var diagsResult diag.Diagnostics
 	testResult := client.TestDatabaseCredentials{}
 	variables := map[string]interface{}{
-		"connectionType": "transactional-db",
+		"connectionType": client.TransactionalConnectionType,
 		"dbType":         strings.ToLower(data.DbType.ValueString()),
 		"host":           data.Configuration.Host.ValueString(),
 		"port":           data.Configuration.Port.ValueInt64(),
-		"dbName":         data.Configuration.Name.ValueString(),
+		"dbName":         data.Configuration.Database.ValueString(),
 		"user":           data.Configuration.Credentials.Username.ValueString(),
 		"password":       data.Configuration.Credentials.Password.ValueString(),
 	}
@@ -368,40 +370,40 @@ func (r *TransactionalWarehouseResource) addConnection(ctx context.Context, data
 	if err := r.client.Mutate(ctx, &testResult, variables); err != nil {
 		toPrint := fmt.Sprintf("MC client 'TestDatabaseCredentials' mutation result - %s", err.Error())
 		diagsResult.AddError(toPrint, "")
-		return &data, diagsResult
+		return nil, diagsResult
 	} else if !testResult.TestDatabaseCredentials.Success {
 		diags := databaseTestDiagnosticsToDiags(testResult.TestDatabaseCredentials.Warnings)
 		diags = append(diags, databaseTestDiagnosticsToDiags(testResult.TestDatabaseCredentials.Validations)...)
 		diagsResult.Append(diags...)
-		return &data, diagsResult
+		return nil, diagsResult
 	}
 
 	addResult := client.AddConnection{}
 	var name, createWarehouseType *string = nil, nil
 	warehouseUuid := data.Uuid.ValueStringPointer()
-	dataCollectorUuid := data.DataCollectorUuid.ValueStringPointer()
+	collectorUuid := data.CollectorUuid.ValueStringPointer()
 
 	if warehouseUuid == nil || *warehouseUuid == "" {
 		warehouseUuid = nil
 		name = data.Name.ValueStringPointer()
-		temp := "transactional-db"
+		temp := client.TransactionalConnectionType
 		createWarehouseType = &temp
 	}
 
 	variables = map[string]interface{}{
-		"dcId":                (*client.UUID)(dataCollectorUuid),
+		"dcId":                (*client.UUID)(collectorUuid),
 		"dwId":                (*client.UUID)(warehouseUuid),
 		"key":                 testResult.TestDatabaseCredentials.Key,
 		"jobTypes":            []string{"metadata", "query_logs", "sql_query", "json_schema"},
 		"name":                name,
-		"connectionType":      "transactional-db",
+		"connectionType":      client.TransactionalConnectionType,
 		"createWarehouseType": createWarehouseType,
 	}
 
 	if err := r.client.Mutate(ctx, &addResult, variables); err != nil {
 		toPrint := fmt.Sprintf("MC client 'AddConnection' mutation result - %s", err.Error())
 		diagsResult.AddError(toPrint, "")
-		return &data, diagsResult
+		return nil, diagsResult
 	}
 
 	data.Uuid = types.StringValue(addResult.AddConnection.Connection.Warehouse.Uuid)
