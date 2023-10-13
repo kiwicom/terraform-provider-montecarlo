@@ -8,6 +8,7 @@ import (
 	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/client"
 	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/common"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/resourcevalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -111,6 +112,15 @@ func (r *DomainResource) Schema(ctx context.Context, req resource.SchemaRequest,
 				),
 			},
 		},
+	}
+}
+
+func (r *DomainResource) ConfigValidators(ctx context.Context) []resource.ConfigValidator {
+	return []resource.ConfigValidator{
+		resourcevalidator.Conflicting(
+			path.MatchRoot("assignments"),
+			path.MatchRoot("tags"),
+		),
 	}
 }
 

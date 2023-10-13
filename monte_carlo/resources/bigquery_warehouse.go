@@ -10,6 +10,7 @@ import (
 	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/client"
 	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/common"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -17,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -74,6 +76,7 @@ func (r *BigQueryWarehouseResource) Schema(ctx context.Context, req resource.Sch
 			"name": schema.StringAttribute{
 				Required:            true,
 				MarkdownDescription: "The name of the BigQuery warehouse as it will be presented in Monte Carlo.",
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"collector_uuid": schema.StringAttribute{
 				Required: true,
