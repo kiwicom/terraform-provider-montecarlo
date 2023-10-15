@@ -46,13 +46,9 @@ type TransactionalWarehouseResourceModel struct {
 }
 
 type Configuration struct {
-	Host        types.String `tfsdk:"host"`
-	Port        types.Int64  `tfsdk:"port"`
-	Database    types.String `tfsdk:"database"`
-	Credentials Credentials  `tfsdk:"credentials"`
-}
-
-type Credentials struct {
+	Host     types.String `tfsdk:"host"`
+	Port     types.Int64  `tfsdk:"port"`
+	Database types.String `tfsdk:"database"`
 	Username types.String `tfsdk:"username"`
 	Password types.String `tfsdk:"password"`
 }
@@ -90,7 +86,7 @@ func (r *TransactionalWarehouseResource) Schema(ctx context.Context, req resourc
 			},
 			"db_type": schema.StringAttribute{
 				Required:            true,
-				MarkdownDescription: "",
+				MarkdownDescription: "ss",
 				Validators: []validator.String{
 					stringvalidator.OneOf("POSTGRES", "MYSQL", "SQL-SERVER"),
 				},
@@ -129,21 +125,15 @@ func (r *TransactionalWarehouseResource) Schema(ctx context.Context, req resourc
 							stringplanmodifier.RequiresReplaceIfConfigured(),
 						},
 					},
-					"credentials": schema.SingleNestedAttribute{
+					"username": schema.StringAttribute{
 						Required:            true,
-						MarkdownDescription: "",
-						Attributes: map[string]schema.Attribute{
-							"username": schema.StringAttribute{
-								Required:            true,
-								Sensitive:           true,
-								MarkdownDescription: "Login username",
-							},
-							"password": schema.StringAttribute{
-								Required:            true,
-								Sensitive:           true,
-								MarkdownDescription: "Login password",
-							},
-						},
+						Sensitive:           true,
+						MarkdownDescription: "Login username",
+					},
+					"password": schema.StringAttribute{
+						Required:            true,
+						Sensitive:           true,
+						MarkdownDescription: "Login password",
 					},
 				},
 			},
@@ -229,10 +219,8 @@ func (r *TransactionalWarehouseResource) Read(ctx context.Context, req resource.
 		Host:     types.StringNull(),
 		Port:     types.Int64Null(),
 		Database: types.StringNull(),
-		Credentials: Credentials{
-			Username: types.StringNull(),
-			Password: types.StringNull(),
-		},
+		Username: types.StringNull(),
+		Password: types.StringNull(),
 	}
 
 	for _, connection := range getResult.GetWarehouse.Connections {
@@ -286,8 +274,8 @@ func (r *TransactionalWarehouseResource) Update(ctx context.Context, req resourc
 	host := data.Configuration.Host.ValueString()
 	port := data.Configuration.Port.ValueInt64()
 	dbType := strings.ToLower(data.DbType.ValueString())
-	username := data.Configuration.Credentials.Username.ValueString()
-	password := data.Configuration.Credentials.Password.ValueString()
+	username := data.Configuration.Username.ValueString()
+	password := data.Configuration.Password.ValueString()
 
 	variables = map[string]interface{}{
 		"changes": client.JSONString(fmt.Sprintf(
@@ -363,8 +351,8 @@ func (r *TransactionalWarehouseResource) addConnection(ctx context.Context, data
 		"host":           data.Configuration.Host.ValueString(),
 		"port":           data.Configuration.Port.ValueInt64(),
 		"dbName":         data.Configuration.Database.ValueString(),
-		"user":           data.Configuration.Credentials.Username.ValueString(),
-		"password":       data.Configuration.Credentials.Password.ValueString(),
+		"user":           data.Configuration.Username.ValueString(),
+		"password":       data.Configuration.Password.ValueString(),
 	}
 
 	if err := r.client.Mutate(ctx, &testResult, variables); err != nil {

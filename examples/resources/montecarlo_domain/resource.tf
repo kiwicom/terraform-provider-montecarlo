@@ -1,11 +1,4 @@
-# This resource is currently only in Beta version ! Assignments such as projects,
-# datasets and tables can only be provided in MCON's format (Monte Carlo universal identifiers).
-# Stable release for this resource will contain automatic translation of data assets to the MCON's
-#
-# Users using `tags` attribute instead of assignments can consider this functionality as stable
-# MCON format is following: MCON++{account_uuid}++{resource_uuid}++{object_type}++{object_id}
-
-resource "montecarlo_domain" "example_assignments" {
+resource "montecarlo_domain" "example_assignments_raw" {
   name        = "name"
   description = "description"
   assignments = [
@@ -25,5 +18,23 @@ resource "montecarlo_domain" "example_tags" {
     {
       name = "montecarlo"
     }
+  ]
+}
+
+## ITS POSSIBLE TO USE DATA SOURCE WAREHOUSE TO OBTAIN
+## ASSIGNMENTS MAPPING TO MCON's AUTOMATICALLY INSTEAD
+## OF PROVIDING IT MANUALLY IN RAW FORMAT
+
+data "montecarlo_warehouse" "bq" {
+  uuid = "427a1600-2653-40c5-a1e7-5ec98703ee9d"
+}
+
+resource "montecarlo_domain" "example_assignments_advanced" {
+  name        = "name"
+  description = "description"
+  assignments = [
+    data.montecarlo_warehouse.bq.projects["gcp-project1-722af1c6"].mcon,
+    data.montecarlo_warehouse.bq.projects["gcp-project2-744bc2c5"].datasets["postgre-dataset-1"].mcon,
+    data.montecarlo_warehouse.bq.projects["gcp-project2-744bc2c5"].datasets["postgre-dataset-2"].tables["table-1"].mcon,
   ]
 }
