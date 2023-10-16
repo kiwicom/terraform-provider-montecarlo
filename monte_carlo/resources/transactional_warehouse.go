@@ -279,7 +279,7 @@ func (r *TransactionalWarehouseResource) Update(ctx context.Context, req resourc
 
 	variables = map[string]interface{}{
 		"changes": client.JSONString(fmt.Sprintf(
-			`{"db_type":"%s", "host": "%s", "port": "%d", "user": "%s", "password": "%s"}`,
+			`{"db_type":"%s", "host": "%s", "port": %d, "user": "%s", "password": "%s"}`,
 			dbType, host, port, username, password)),
 		"connectionId":   client.UUID(data.ConnectionUuid.ValueString()),
 		"shouldReplace":  true,
@@ -335,6 +335,7 @@ func (r *TransactionalWarehouseResource) ImportState(ctx context.Context, req re
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("uuid"), idsImported[0])...)
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("connection_uuid"), idsImported[1])...)
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("collector_uuid"), idsImported[2])...)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("configuration"), Configuration{})...)
 	} else {
 		resp.Diagnostics.AddError("Unexpected Import Identifier", fmt.Sprintf(
 			"Expected import identifier with format: <warehouse_uuid>,<connection_uuid>,<data_collector_uuid>. Got: %q", req.ID),
