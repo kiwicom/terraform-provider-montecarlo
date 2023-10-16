@@ -184,22 +184,24 @@ type TestDatabaseCredentials struct {
 	} `graphql:"testDatabaseCredentials(connectionType: $connectionType, dbName: $dbName, dbType: $dbType, host: $host, port: $port, user: $user, password: $password)"`
 }
 
-type GetTables struct {
-	GetTables struct {
-		Edges []struct {
-			Node struct {
-				Mcon        string
-				ProjectName string
-				Dataset     string
-				TableId     string
-				Warehouse   struct {
-					Uuid    string
-					Account struct {
-						Uuid string
-					}
-				}
+type GetTablesEdge struct {
+	Node struct {
+		Mcon        string
+		ProjectName string
+		Dataset     string
+		TableId     string
+		Warehouse   struct {
+			Uuid    string
+			Account struct {
+				Uuid string
 			}
 		}
+	}
+}
+
+type GetTables struct {
+	GetTables struct {
+		Edges    []GetTablesEdge
 		PageInfo struct {
 			StartCursor string
 			EndCursor   string

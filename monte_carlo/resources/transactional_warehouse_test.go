@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-framework/providerserver"
-	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
-	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/client"
 	cmock "github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/client/mock"
 	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/common"
 	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/provider"
+
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/mock"
 )
 
