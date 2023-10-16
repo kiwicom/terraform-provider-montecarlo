@@ -1,4 +1,20 @@
 
+<a name="v0.2.0"></a>
+## v0.2.0
+
+> 2023-10-16
+
+- Full diff - **[v0.2.0-pre...v0.2.0](https://github.com/kiwicom/terraform-provider-montecarlo/compare/v0.2.0-pre...v0.2.0)**  
+
+### :books: Documentation (unchanged functionality)
+
+* **all:** add missing docs before 0.2.0 release ([#45](https://github.com/kiwicom/terraform-provider-montecarlo/issues/45))
+
+### :bug: Bug Fixes
+
+* **resources:** resolved common issues before 0.2.0 ([#44](https://github.com/kiwicom/terraform-provider-montecarlo/issues/44))
+
+
 <a name="v0.2.0-pre"></a>
 ## v0.2.0-pre
 
