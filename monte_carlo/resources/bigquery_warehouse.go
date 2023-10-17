@@ -46,44 +46,43 @@ type BigQueryWarehouseResourceModel struct {
 	DeletionProtection types.Bool   `tfsdk:"deletion_protection"`
 }
 
+type BigQueryWarehouseResourceModelV0 struct {
+	Uuid               types.String `tfsdk:"uuid"`
+	ConnectionUuid     types.String `tfsdk:"connection_uuid"`
+	Name               types.String `tfsdk:"name"`
+	DataCollectorUuid  types.String `tfsdk:"data_collector_uuid"`
+	ServiceAccountKey  types.String `tfsdk:"service_account_key"`
+	DeletionProtection types.Bool   `tfsdk:"deletion_protection"`
+}
+
 func (r *BigQueryWarehouseResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_bigquery_warehouse"
 }
 
 func (r *BigQueryWarehouseResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "This resource represents the integration of Monte Carlo with BigQuery data warehouse. " +
-			"While this resource is not responsible for handling data access and other operations, such as data filtering, " +
-			"it is responsible for managing the connection to BigQuery using the provided service account key.",
+		Version: 1,
 		Attributes: map[string]schema.Attribute{
 			"uuid": schema.StringAttribute{
-				Computed:            true,
-				Optional:            false,
-				MarkdownDescription: "Unique identifier of warehouse managed by this resource.",
+				Computed: true,
+				Optional: false,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"connection_uuid": schema.StringAttribute{
-				Computed:            true,
-				Optional:            false,
-				MarkdownDescription: "Unique identifier of connection responsible for communication with BigQuery.",
+				Computed: true,
+				Optional: false,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"name": schema.StringAttribute{
-				Required:            true,
-				MarkdownDescription: "The name of the BigQuery warehouse as it will be presented in Monte Carlo.",
-				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+				Required:   true,
+				Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"collector_uuid": schema.StringAttribute{
 				Required: true,
-				MarkdownDescription: "Unique identifier of data collector this warehouse will be attached to. " +
-					"Its not possible to change data collectors of already created warehouses, therefore if Terraform " +
-					"detects change in this attribute it will plan recreation (which might not be successfull due to deletion " +
-					"protection flag). Since this property is immutable in Monte Carlo warehouses it can only be changed in the configuration",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplaceIfConfigured(),
 				},
@@ -91,18 +90,11 @@ func (r *BigQueryWarehouseResource) Schema(ctx context.Context, req resource.Sch
 			"service_account_key": schema.StringAttribute{
 				Required:  true,
 				Sensitive: true,
-				MarkdownDescription: "Service account key used by the warehouse connection for authentication and " +
-					"authorization against BigQuery. The very same service account is used to grant required " +
-					"permissions to Monte Carlo BigQuery warehouse for the data access. For more information " +
-					"follow Monte Carlo documentation: https://docs.getmontecarlo.com/docs/bigquery",
 			},
 			"deletion_protection": schema.BoolAttribute{
 				Optional: true,
 				Computed: true,
 				Default:  booldefault.StaticBool(true),
-				MarkdownDescription: "Whether or not to allow Terraform to destroy the instance. Unless this field is set " +
-					"to false in Terraform state, a terraform destroy or terraform apply that would delete the instance will fail. " +
-					"This setting will prevent the deletion even if the real resource is already deleted.",
 			},
 		},
 	}
@@ -360,4 +352,63 @@ func bqTestDiagnosticToDiags[T client.BqTestWarnings | client.BqTestErrors](in T
 		}
 	}
 	return diags
+}
+
+func (r *BigQueryWarehouseResource) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader {
+	return map[int64]resource.StateUpgrader{
+		0: {
+			PriorSchema: &schema.Schema{
+				Attributes: map[string]schema.Attribute{
+					"uuid": schema.StringAttribute{
+						Computed: true,
+						Optional: false,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
+						},
+					},
+					"connection_uuid": schema.StringAttribute{
+						Computed: true,
+						Optional: false,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
+						},
+					},
+					"name": schema.StringAttribute{
+						Required:   true,
+						Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
+					},
+					"data_collector_uuid": schema.StringAttribute{
+						Required: true,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplaceIfConfigured(),
+						},
+					},
+					"service_account_key": schema.StringAttribute{
+						Required:  true,
+						Sensitive: true,
+					},
+					"deletion_protection": schema.BoolAttribute{
+						Optional: true,
+						Computed: true,
+						Default:  booldefault.StaticBool(true),
+					},
+				},
+			},
+			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+				var priorStateData BigQueryWarehouseResourceModelV0
+				resp.Diagnostics.Append(req.State.Get(ctx, &priorStateData)...)
+				if !resp.Diagnostics.HasError() {
+					upgradedStateData := BigQueryWarehouseResourceModel{
+						Uuid:               priorStateData.Uuid,
+						ConnectionUuid:     priorStateData.ConnectionUuid,
+						CollectorUuid:      priorStateData.DataCollectorUuid,
+						Name:               priorStateData.Name,
+						ServiceAccountKey:  priorStateData.ServiceAccountKey,
+						DeletionProtection: priorStateData.DeletionProtection,
+					}
+					resp.Diagnostics.Append(resp.State.Set(ctx, upgradedStateData)...)
+				}
+			},
+		},
+	}
 }
