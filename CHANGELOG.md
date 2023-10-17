@@ -1,4 +1,17 @@
 
+
+<a name="v0.2.1"></a>
+## v0.2.1
+
+> 2023-10-17
+
+- Full diff - **[v0.2.0...v0.2.1](https://github.com/kiwicom/terraform-provider-montecarlo/compare/v0.2.0...v0.2.1)**  
+
+### :bug: Bug Fixes
+
+* **resources:** bigquery warehouse missing state upgrade v0 ([#48](https://github.com/kiwicom/terraform-provider-montecarlo/issues/48))
+
+
 <a name="v0.2.0"></a>
 ## v0.2.0
 
