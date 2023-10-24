@@ -140,7 +140,7 @@ func (r *DomainResource) Create(ctx context.Context, req resource.CreateRequest,
 	createResult := client.CreateOrUpdateDomain{}
 	variables := map[string]interface{}{
 		"uuid":        (*client.UUID)(nil),
-		"assignments": normalize(data.Assignments),
+		"assignments": normalize[string](data.Assignments),
 		"tags":        common.ToTagPairs(data.Tags),
 		"name":        data.Name.ValueString(),
 		"description": data.Description.ValueString(),
@@ -202,7 +202,7 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 	createResult := client.CreateOrUpdateDomain{}
 	variables := map[string]interface{}{
 		"uuid":        client.UUID(data.Uuid.ValueString()),
-		"assignments": normalize(data.Assignments),
+		"assignments": normalize[string](data.Assignments),
 		"tags":        common.ToTagPairs(data.Tags),
 		"name":        data.Name.ValueString(),
 		"description": data.Description.ValueString(),
@@ -242,10 +242,10 @@ func (r *DomainResource) ImportState(ctx context.Context, req resource.ImportSta
 	resource.ImportStatePassthroughID(ctx, path.Root("uuid"), req, resp)
 }
 
-func normalize(in []basetypes.StringValue) []string {
-	res := make([]string, 0, len(in))
+func normalize[T ~string](in []basetypes.StringValue) []T {
+	res := make([]T, 0, len(in))
 	for _, element := range in {
-		res = append(res, element.ValueString())
+		res = append(res, T(element.ValueString()))
 	}
 	return res
 }
