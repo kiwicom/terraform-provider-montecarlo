@@ -140,7 +140,7 @@ func (r *DomainResource) Create(ctx context.Context, req resource.CreateRequest,
 	createResult := client.CreateOrUpdateDomain{}
 	variables := map[string]interface{}{
 		"uuid":        (*client.UUID)(nil),
-		"assignments": normalize(data.Assignments),
+		"assignments": normalize[string](data.Assignments),
 		"tags":        common.ToTagPairs(data.Tags),
 		"name":        data.Name.ValueString(),
 		"description": data.Description.ValueString(),
@@ -166,7 +166,7 @@ func (r *DomainResource) Read(ctx context.Context, req resource.ReadRequest, res
 	getResult := client.GetDomain{}
 	variables := map[string]interface{}{"uuid": client.UUID(data.Uuid.ValueString())}
 
-	if bytes, err := r.client.ExecRaw(ctx, client.GetDomainQuery, variables); err != nil && (bytes == nil || len(bytes) == 0) {
+	if bytes, err := r.client.ExecRaw(ctx, client.GetDomainQuery, variables); err != nil && len(bytes) == 0 {
 		toPrint := fmt.Sprintf("MC client 'GetDomain' query result - %s", err.Error())
 		resp.Diagnostics.AddError(toPrint, "")
 		return
@@ -202,7 +202,7 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 	createResult := client.CreateOrUpdateDomain{}
 	variables := map[string]interface{}{
 		"uuid":        client.UUID(data.Uuid.ValueString()),
-		"assignments": normalize(data.Assignments),
+		"assignments": normalize[string](data.Assignments),
 		"tags":        common.ToTagPairs(data.Tags),
 		"name":        data.Name.ValueString(),
 		"description": data.Description.ValueString(),
@@ -242,18 +242,18 @@ func (r *DomainResource) ImportState(ctx context.Context, req resource.ImportSta
 	resource.ImportStatePassthroughID(ctx, path.Root("uuid"), req, resp)
 }
 
-func normalize(in []basetypes.StringValue) []string {
-	res := make([]string, 0, len(in))
-	for _, element := range in {
-		res = append(res, element.ValueString())
+func normalize[T ~string](in []basetypes.StringValue) []T {
+	res := make([]T, len(in))
+	for i, element := range in {
+		res[i] = T(element.ValueString())
 	}
 	return res
 }
 
 func denormalize(in []string) []types.String {
-	res := make([]types.String, 0, len(in))
-	for _, element := range in {
-		res = append(res, types.StringValue(element))
+	res := make([]types.String, len(in))
+	for i, element := range in {
+		res[i] = types.StringValue(element)
 	}
 	return res
 }

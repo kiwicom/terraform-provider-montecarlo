@@ -183,7 +183,7 @@ func (r *TransactionalWarehouseResource) Read(ctx context.Context, req resource.
 	getResult := client.GetWarehouse{}
 	variables := map[string]interface{}{"uuid": client.UUID(data.Uuid.ValueString())}
 
-	if bytes, err := r.client.ExecRaw(ctx, client.GetWarehouseQuery, variables); err != nil && (bytes == nil || len(bytes) == 0) {
+	if bytes, err := r.client.ExecRaw(ctx, client.GetWarehouseQuery, variables); err != nil && len(bytes) == 0 {
 		toPrint := fmt.Sprintf("MC client 'GetWarehouse' query result - %s", err.Error())
 		resp.Diagnostics.AddError(toPrint, "")
 		return

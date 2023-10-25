@@ -209,3 +209,29 @@ type GetTables struct {
 		}
 	} `graphql:"getTables(dwId: $dwId, first: $first, after: $after, isDeleted: $isDeleted, isExcluded: $isExcluded)"`
 }
+
+type AuthorizationGroup struct {
+	Name               string
+	Label              string
+	Description        string
+	IsManaged          bool
+	Roles              []struct{ Name string }
+	DomainRestrictions []struct{ Uuid string }
+	SsoGroup           *string
+}
+
+type CreateOrUpdateAuthorizationGroup struct {
+	CreateOrUpdateAuthorizationGroup struct {
+		AuthorizationGroup AuthorizationGroup
+	} `graphql:"createOrUpdateAuthorizationGroup(name: $name, label: $label, description: $description, roles: $roles, domainRestrictionIds: $domainRestrictionIds, ssoGroup: $ssoGroup)"`
+}
+
+type GetAuthorizationGroups struct {
+	GetAuthorizationGroups []AuthorizationGroup `graphql:"getAuthorizationGroups"`
+}
+
+type DeleteAuthorizationGroup struct {
+	DeleteAuthorizationGroup struct {
+		Deleted int
+	} `graphql:"deleteAuthorizationGroup(name: $name)"`
+}

@@ -104,6 +104,7 @@ func (p *Provider) Resources(ctx context.Context) []func() resource.Resource {
 		resources.NewBigQueryWarehouseResource,
 		resources.NewTransactionalWarehouseResource,
 		resources.NewDomainResource,
+		resources.NewIamGroupResource,
 	}
 }
 
