@@ -59,34 +59,26 @@ func (r *TransactionalWarehouseResource) Metadata(ctx context.Context, req resou
 
 func (r *TransactionalWarehouseResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "This resource represents the integration of Monte Carlo with transactional data warehouse. " +
-			"While this resource is not responsible for handling data access and other operations, such as data filtering, " +
-			"it is responsible for managing the connection to transactional db using the provided configuration.",
 		Attributes: map[string]schema.Attribute{
 			"uuid": schema.StringAttribute{
-				Computed:            true,
-				Optional:            false,
-				MarkdownDescription: "Unique identifier of warehouse managed by this resource.",
+				Computed: true,
+				Optional: false,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"connection_uuid": schema.StringAttribute{
-				Computed:            true,
-				Optional:            false,
-				MarkdownDescription: "Unique identifier of connection responsible for communication with transactional db.",
+				Computed: true,
+				Optional: false,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"name": schema.StringAttribute{
-				Required:            true,
-				MarkdownDescription: "The name of the Postgre warehouse as it will be presented in Monte Carlo.",
+				Required: true,
 			},
 			"db_type": schema.StringAttribute{
-				Required:            true,
-				MarkdownDescription: "ss",
+				Required: true,
 				Validators: []validator.String{
 					stringvalidator.OneOf("POSTGRES", "MYSQL", "SQL-SERVER"),
 				},
@@ -96,44 +88,32 @@ func (r *TransactionalWarehouseResource) Schema(ctx context.Context, req resourc
 			},
 			"collector_uuid": schema.StringAttribute{
 				Required: true,
-				MarkdownDescription: "Unique identifier of data collector this warehouse will be attached to. " +
-					"Its not possible to change data collectors of already created warehouses, therefore if Terraform " +
-					"detects change in this attribute it will plan recreation (which might not be successfull due to deletion " +
-					"protection flag). Since this property is immutable in Monte Carlo warehouses it can only be changed in the configuration",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplaceIfConfigured(),
 				},
 			},
 			"configuration": schema.SingleNestedAttribute{
 				Required: true,
-				MarkdownDescription: "Configuration used by the warehouse connection for connecting " +
-					"to the transactional database. For more information follow Monte Carlo documentation: " +
-					"https://docs.getmontecarlo.com/docs/postgres",
 				Attributes: map[string]schema.Attribute{
 					"host": schema.StringAttribute{
-						Required:            true,
-						MarkdownDescription: "Database host",
+						Required: true,
 					},
 					"port": schema.Int64Attribute{
-						Required:            true,
-						MarkdownDescription: "Database port",
+						Required: true,
 					},
 					"database": schema.StringAttribute{
-						Required:            true,
-						MarkdownDescription: "Database name",
+						Required: true,
 						PlanModifiers: []planmodifier.String{
 							stringplanmodifier.RequiresReplaceIfConfigured(),
 						},
 					},
 					"username": schema.StringAttribute{
-						Required:            true,
-						Sensitive:           true,
-						MarkdownDescription: "Login username",
+						Required:  true,
+						Sensitive: true,
 					},
 					"password": schema.StringAttribute{
-						Required:            true,
-						Sensitive:           true,
-						MarkdownDescription: "Login password",
+						Required:  true,
+						Sensitive: true,
 					},
 				},
 			},
@@ -141,9 +121,6 @@ func (r *TransactionalWarehouseResource) Schema(ctx context.Context, req resourc
 				Optional: true,
 				Computed: true,
 				Default:  booldefault.StaticBool(true),
-				MarkdownDescription: "Whether or not to allow Terraform to destroy the instance. Unless this field is set " +
-					"to false in Terraform state, a terraform destroy or terraform apply that would delete the instance will fail. " +
-					"This setting will prevent the deletion even if the real resource is already deleted.",
 			},
 		},
 	}

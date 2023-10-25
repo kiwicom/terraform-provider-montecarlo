@@ -46,25 +46,17 @@ func (p *Provider) Metadata(ctx context.Context, req provider.MetadataRequest, r
 
 func (p *Provider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This open-source _Terraform_ provider enables users to seamlessly and quickly integrate the " +
-			"**[Monte Carlo](https://www.montecarlodata.com/)** data reliabillity platform into their infrastructure as a code " +
-			"(IaC) workflows. Provider ensures this functionality by communicating with **Monte Carlo** via its GraphQL API.",
 		Attributes: map[string]schema.Attribute{
 			"account_service_key": schema.SingleNestedAttribute{
-				MarkdownDescription: "Monte Carlo generated **Account Service Key** used to authenticate API calls of " +
-					"this provider. Should not be confused with personal API key. <br><br>For more information: " +
-					"https://docs.getmontecarlo.com/docs/creating-an-api-token#creating-an-api-key <br><br>",
 				Required: true,
 				Attributes: map[string]schema.Attribute{
 					"id": schema.StringAttribute{
-						MarkdownDescription: "Monte Carlo **Account service key** _ID_.",
-						Required:            true,
-						Sensitive:           true,
+						Required:  true,
+						Sensitive: true,
 					},
 					"token": schema.StringAttribute{
-						MarkdownDescription: "Monte Carlo **Account service key** _token_.",
-						Required:            true,
-						Sensitive:           true,
+						Required:  true,
+						Sensitive: true,
 					},
 				},
 			},

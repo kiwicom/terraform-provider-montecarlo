@@ -47,39 +47,31 @@ func (d *WarehouseDataSource) Metadata(ctx context.Context, req datasource.Metad
 
 func (d *WarehouseDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "",
 		Attributes: map[string]schema.Attribute{
 			"uuid": schema.StringAttribute{
-				Required:            true,
-				MarkdownDescription: "",
+				Required: true,
 			},
 			"projects": schema.MapNestedAttribute{
-				Computed:            true,
-				Optional:            false,
-				MarkdownDescription: "",
+				Computed: true,
+				Optional: false,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"mcon": schema.StringAttribute{
-							Required:            true,
-							MarkdownDescription: "",
+							Required: true,
 						},
 						"datasets": schema.MapNestedAttribute{
-							MarkdownDescription: "",
-							Required:            true,
+							Required: true,
 							NestedObject: schema.NestedAttributeObject{
 								Attributes: map[string]schema.Attribute{
 									"mcon": schema.StringAttribute{
-										Required:            true,
-										MarkdownDescription: "",
+										Required: true,
 									},
 									"tables": schema.MapNestedAttribute{
-										MarkdownDescription: "",
-										Required:            true,
+										Required: true,
 										NestedObject: schema.NestedAttributeObject{
 											Attributes: map[string]schema.Attribute{
 												"mcon": schema.StringAttribute{
-													Required:            true,
-													MarkdownDescription: "",
+													Required: true,
 												},
 											},
 										},

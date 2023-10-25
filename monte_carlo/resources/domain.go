@@ -50,44 +50,34 @@ func (r *DomainResource) Metadata(ctx context.Context, req resource.MetadataRequ
 
 func (r *DomainResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "**(Beta version !!)** A named resource which lets you define a collection of tables or views by selecting " +
-			"a combination of tables, schemas or databases. Domains can be used to create notifications and authorization groups as " +
-			"a way to adjust the scope without having to redefine a list of tables every time.",
 		Attributes: map[string]schema.Attribute{
 			"uuid": schema.StringAttribute{
-				Computed:            true,
-				Optional:            false,
-				MarkdownDescription: "Unique identifier of domain managed by this resource.",
+				Computed: true,
+				Optional: false,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"name": schema.StringAttribute{
-				Required:            true,
-				MarkdownDescription: "The name of the Domain as it will be presented in Monte Carlo.",
+				Required: true,
 			},
 			"description": schema.StringAttribute{
-				Computed:            true,
-				Optional:            true,
-				Default:             stringdefault.StaticString(""),
-				MarkdownDescription: "Description of the domain as it will be presented in Monte Carlo.",
+				Computed: true,
+				Optional: true,
+				Default:  stringdefault.StaticString(""),
 			},
 			"tags": schema.SetNestedAttribute{
-				Computed:            true,
-				Optional:            true,
-				MarkdownDescription: "Filter by tag key/value pairs for tables.",
+				Computed: true,
+				Optional: true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"name": schema.StringAttribute{
-							Required:            true,
-							MarkdownDescription: "Tag name",
+							Required: true,
 						},
 						"value": schema.StringAttribute{
-							Computed:            true,
-							Optional:            true,
-							Default:             stringdefault.StaticString(""),
-							MarkdownDescription: "Tag value",
+							Computed: true,
+							Optional: true,
+							Default:  stringdefault.StaticString(""),
 						},
 					},
 				},
@@ -102,8 +92,6 @@ func (r *DomainResource) Schema(ctx context.Context, req resource.SchemaRequest,
 				Computed:    true,
 				Optional:    true,
 				ElementType: types.StringType,
-				MarkdownDescription: "Objects assigned to domain (in MCONs format: " +
-					"MCON++{account_uuid}++{resource_uuid}++{object_type}++{object_id}).",
 				Default: setdefault.StaticValue(
 					types.SetValueMust(
 						types.StringType,
