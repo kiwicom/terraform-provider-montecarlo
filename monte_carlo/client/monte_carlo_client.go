@@ -210,6 +210,14 @@ type GetTables struct {
 	} `graphql:"getTables(dwId: $dwId, first: $first, after: $after, isDeleted: $isDeleted, isExcluded: $isExcluded)"`
 }
 
+type User struct {
+	Id        string
+	Email     string
+	FirstName string
+	LastName  string
+	IsSso     bool
+}
+
 type AuthorizationGroup struct {
 	Name               string
 	Label              string
@@ -218,6 +226,7 @@ type AuthorizationGroup struct {
 	Roles              []struct{ Name string }
 	DomainRestrictions []struct{ Uuid string }
 	SsoGroup           *string
+	Users              []User
 }
 
 type CreateOrUpdateAuthorizationGroup struct {
@@ -234,4 +243,17 @@ type DeleteAuthorizationGroup struct {
 	DeleteAuthorizationGroup struct {
 		Deleted int
 	} `graphql:"deleteAuthorizationGroup(name: $name)"`
+}
+
+type GetUsersInAccount struct {
+	GetUsersInAccount struct {
+		Edges    []struct{
+			Node User
+		}
+		PageInfo struct {
+			StartCursor string
+			EndCursor   string
+			HasNextPage bool
+		}
+	} `graphql:"getTables(email: $email, first: $first, after: $after)"`
 }
