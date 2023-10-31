@@ -6,7 +6,8 @@
 ![master cicd status](https://github.com/kiwicom/terraform-provider-montecarlo/actions/workflows/master.yml/badge.svg)
 ![GitHub release](https://img.shields.io/github/v/release/kiwicom/terraform-provider-montecarlo)
 [![Go Report Card](https://goreportcard.com/badge/github.com/kiwicom/terraform-provider-montecarlo)](https://goreportcard.com/report/github.com/kiwicom/terraform-provider-montecarlo)
-![coverage](https://raw.githubusercontent.com/kiwicom/terraform-provider-montecarlo/badges/.badges/master/coverage.svg)  
+![coverage](https://raw.githubusercontent.com/kiwicom/terraform-provider-montecarlo/badges/.badges/master/coverage.svg)
+![milestone](https://img.shields.io/github/milestones/progress/kiwicom/terraform-provider-montecarlo/1)  
 
 [![Terraform](https://img.shields.io/badge/terraform-%235835CC.svg?style=for-the-badge&logo=terraform&logoColor=white)](https://registry.terraform.io/providers/kiwicom/montecarlo/latest)
 
@@ -58,11 +59,8 @@ This Terraform provider is using **[Protocol Version 6](https://developer.hashic
 
 ## Examples
 
-Explore the `examples` folder to find detailed Terraform files for each component provided by the **Terraform Provider Monte Carlo**. These files serve as practical examples to help you understand how to use the various features and resources offered by this provider.  
+To get started, navigate to the [`examples`](examples/) folder in this repository to find detailed _Terraform_ files for each component provided by the **Terraform Provider Monte Carlo**.  
 
-Feel free to modify and adapt these files according to your specific requirements, making it easier to integrate the **Terraform Provider Monte Carlo** into your infrastructure.
-
-To get started, navigate to the [`examples`](examples/) folder in this repository.
 
 ## License
 
