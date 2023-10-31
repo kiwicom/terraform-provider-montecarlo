@@ -53,8 +53,7 @@ func TestAccIamGroupResource(t *testing.T) {
 				ImportStateId:                        name,
 				ImportStateVerifyIdentifierAttribute: "name",
 			},
-			// Update and Read testing
-			{
+			{ // Update and Read testing
 				Config: iamGroupConfig(name, roleUpdate, &domainsUpdate, &ssoGroupUpdate),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("montecarlo_iam_group.test", "name", name),

@@ -11,6 +11,7 @@ import (
 	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/common"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -20,7 +21,7 @@ import (
 )
 
 var groupsRegex = regexp.MustCompile(`^groups/.+$`)
-var memberRegex = regexp.MustCompile(`^user/.+$`)
+var memberRegex = regexp.MustCompile(`^user:.+$`)
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ resource.Resource = &IamMemberResource{}
@@ -56,7 +57,7 @@ func (r *IamMemberResource) Schema(ctx context.Context, req resource.SchemaReque
 					stringplanmodifier.RequiresReplaceIfConfigured(),
 				},
 				Validators: []validator.String{
-					stringvalidator.RegexMatches(groupsRegex, "Expected format: groups/{group_name}"),
+					stringvalidator.RegexMatches(groupsRegex, "Expected format - groups/{group_name}"),
 				},
 			},
 			"member": schema.StringAttribute{
@@ -65,7 +66,7 @@ func (r *IamMemberResource) Schema(ctx context.Context, req resource.SchemaReque
 					stringplanmodifier.RequiresReplaceIfConfigured(),
 				},
 				Validators: []validator.String{
-					stringvalidator.RegexMatches(memberRegex, "Expected format: user/{user_email}"),
+					stringvalidator.RegexMatches(memberRegex, "Expected format - user:{user_email}"),
 				},
 			},
 			"member_id": schema.StringAttribute{
@@ -92,7 +93,7 @@ func (r *IamMemberResource) Create(ctx context.Context, req resource.CreateReque
 		return
 	}
 
-	userEmail := strings.Split(data.Member.ValueString(), "user/")[1]
+	userEmail := strings.Split(data.Member.ValueString(), "user:")[1]
 	getUserResult := client.GetUsersInAccount{}
 	variables := map[string]interface{}{
 		"email": userEmail,
@@ -101,7 +102,7 @@ func (r *IamMemberResource) Create(ctx context.Context, req resource.CreateReque
 	}
 
 	if err := r.client.Query(ctx, &getUserResult, variables); err != nil {
-		to_print := fmt.Sprintf("MC client 'getTables' query result - %s", err.Error())
+		to_print := fmt.Sprintf("MC client 'getUsersInAccount' query result - %s", err.Error())
 		resp.Diagnostics.AddError(to_print, "")
 		return
 	} else if len(getUserResult.GetUsersInAccount.Edges) == 0 {
@@ -131,9 +132,9 @@ func (r *IamMemberResource) Create(ctx context.Context, req resource.CreateReque
 	}
 
 	memberUserIds := make([]string, len(found.Users)+1)
-	memberUserIds[len(found.Users)] = getUserResult.GetUsersInAccount.Edges[0].Node.Id
+	memberUserIds[len(found.Users)] = getUserResult.GetUsersInAccount.Edges[0].Node.CognitoUserId
 	for i, user := range found.Users {
-		memberUserIds[i] = user.Id
+		memberUserIds[i] = user.CognitoUserId
 	}
 
 	updateResult := client.CreateOrUpdateAuthorizationGroup{}
@@ -142,7 +143,7 @@ func (r *IamMemberResource) Create(ctx context.Context, req resource.CreateReque
 		"label":                found.Label,
 		"description":          found.Description,
 		"roles":                rolesToNames(found.Roles),
-		"domainRestrictionIds": domainsToUuids(found.DomainRestrictions),
+		"domainRestrictionIds": domainsToUuids[client.UUID](found.DomainRestrictions),
 		"ssoGroup":             found.SsoGroup,
 		"memberUserIds":        memberUserIds,
 	}
@@ -151,7 +152,7 @@ func (r *IamMemberResource) Create(ctx context.Context, req resource.CreateReque
 		to_print := fmt.Sprintf("MC client 'createOrUpdateAuthorizationGroup' mutation result - %s", err.Error())
 		resp.Diagnostics.AddError(to_print, "")
 	} else {
-		data.MemberId = types.StringValue(getUserResult.GetUsersInAccount.Edges[0].Node.Id)
+		data.MemberId = types.StringValue(getUserResult.GetUsersInAccount.Edges[0].Node.CognitoUserId)
 		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 	}
 }
@@ -163,7 +164,7 @@ func (r *IamMemberResource) Read(ctx context.Context, req resource.ReadRequest, 
 		return
 	}
 
-	userEmail := strings.Split(data.Member.ValueString(), "user/")[1]
+	userEmail := strings.Split(data.Member.ValueString(), "user:")[1]
 	getUserResult := client.GetUsersInAccount{}
 	variables := map[string]interface{}{
 		"email": userEmail,
@@ -172,7 +173,7 @@ func (r *IamMemberResource) Read(ctx context.Context, req resource.ReadRequest, 
 	}
 
 	if err := r.client.Query(ctx, &getUserResult, variables); err != nil {
-		to_print := fmt.Sprintf("MC client 'getTables' query result - %s", err.Error())
+		to_print := fmt.Sprintf("MC client 'getUsersInAccount' query result - %s", err.Error())
 		resp.Diagnostics.AddError(to_print, "")
 		return
 	} else if len(getUserResult.GetUsersInAccount.Edges) == 0 {
@@ -200,13 +201,14 @@ func (r *IamMemberResource) Read(ctx context.Context, req resource.ReadRequest, 
 
 	if found == nil || found.SsoGroup != nil {
 		to_print := fmt.Sprintf("Group %s not found or is SSO managed", data.Group.ValueString())
-		resp.Diagnostics.AddError(to_print, "")
+		resp.Diagnostics.AddWarning(to_print, "")
+		resp.State.RemoveResource(ctx)
 	} else if !slices.Contains(found.Users, getUserResult.GetUsersInAccount.Edges[0].Node) {
 		to_print := fmt.Sprintf("User %s not found in group %s", userEmail, data.Group.ValueString())
 		resp.Diagnostics.AddWarning(to_print, "")
 		resp.State.RemoveResource(ctx)
 	} else {
-		data.MemberId = types.StringValue(getUserResult.GetUsersInAccount.Edges[0].Node.Id)
+		data.MemberId = types.StringValue(getUserResult.GetUsersInAccount.Edges[0].Node.CognitoUserId)
 		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 	}
 }
@@ -227,7 +229,7 @@ func (r *IamMemberResource) Delete(ctx context.Context, req resource.DeleteReque
 	variables := map[string]interface{}{}
 	if err := r.client.Query(ctx, &getGroupResult, variables); err != nil {
 		to_print := fmt.Sprintf("MC client 'GetAuthorizationGroups' query result - %s", err.Error())
-		resp.Diagnostics.AddWarning(to_print, "")
+		resp.Diagnostics.AddError(to_print, "")
 		return
 	}
 
@@ -244,7 +246,7 @@ func (r *IamMemberResource) Delete(ctx context.Context, req resource.DeleteReque
 
 	memberUserIds := make([]string, len(found.Users))
 	for i, user := range found.Users {
-		memberUserIds[i] = user.Id
+		memberUserIds[i] = user.CognitoUserId
 	}
 
 	updateResult := client.CreateOrUpdateAuthorizationGroup{}
@@ -254,7 +256,7 @@ func (r *IamMemberResource) Delete(ctx context.Context, req resource.DeleteReque
 		"label":                found.Label,
 		"description":          found.Description,
 		"roles":                rolesToNames(found.Roles),
-		"domainRestrictionIds": domainsToUuids(found.DomainRestrictions),
+		"domainRestrictionIds": domainsToUuids[client.UUID](found.DomainRestrictions),
 		"ssoGroup":             found.SsoGroup,
 		"memberUserIds":        memberUserIds,
 	}
@@ -266,5 +268,13 @@ func (r *IamMemberResource) Delete(ctx context.Context, req resource.DeleteReque
 }
 
 func (r *IamMemberResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// TODO
+	idsImported := strings.Split(req.ID, ",")
+	if len(idsImported) == 2 && idsImported[0] != "" && idsImported[1] != "" {
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("group"), idsImported[0])...)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("member"), idsImported[1])...)
+	} else {
+		resp.Diagnostics.AddError("Unexpected Import Identifier", fmt.Sprintf(
+			"Expected import identifier with format: groups/<group_name>,user:<user_email>. Got: %q", req.ID),
+		)
+	}
 }

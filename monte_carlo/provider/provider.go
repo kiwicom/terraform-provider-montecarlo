@@ -97,6 +97,7 @@ func (p *Provider) Resources(ctx context.Context) []func() resource.Resource {
 		resources.NewTransactionalWarehouseResource,
 		resources.NewDomainResource,
 		resources.NewIamGroupResource,
+		resources.NewIamMemberResource,
 	}
 }
 
