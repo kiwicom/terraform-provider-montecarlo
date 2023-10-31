@@ -211,11 +211,11 @@ type GetTables struct {
 }
 
 type User struct {
-	Id        string
-	Email     string
-	FirstName string
-	LastName  string
-	IsSso     bool
+	CognitoUserId string
+	Email         string
+	FirstName     string
+	LastName      string
+	IsSso         bool
 }
 
 type AuthorizationGroup struct {
@@ -232,7 +232,7 @@ type AuthorizationGroup struct {
 type CreateOrUpdateAuthorizationGroup struct {
 	CreateOrUpdateAuthorizationGroup struct {
 		AuthorizationGroup AuthorizationGroup
-	} `graphql:"createOrUpdateAuthorizationGroup(name: $name, label: $label, description: $description, roles: $roles, domainRestrictionIds: $domainRestrictionIds, ssoGroup: $ssoGroup)"`
+	} `graphql:"createOrUpdateAuthorizationGroup(name: $name, label: $label, description: $description, roles: $roles, memberUserIds: $memberUserIds, domainRestrictionIds: $domainRestrictionIds, ssoGroup: $ssoGroup)"`
 }
 
 type GetAuthorizationGroups struct {
@@ -247,7 +247,7 @@ type DeleteAuthorizationGroup struct {
 
 type GetUsersInAccount struct {
 	GetUsersInAccount struct {
-		Edges    []struct{
+		Edges []struct {
 			Node User
 		}
 		PageInfo struct {
@@ -255,5 +255,5 @@ type GetUsersInAccount struct {
 			EndCursor   string
 			HasNextPage bool
 		}
-	} `graphql:"getTables(email: $email, first: $first, after: $after)"`
+	} `graphql:"getUsersInAccount(email: $email, first: $first, after: $after)"`
 }

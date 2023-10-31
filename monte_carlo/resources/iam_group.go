@@ -122,6 +122,7 @@ func (r *IamGroupResource) Create(ctx context.Context, req resource.CreateReques
 		"roles":                []string{data.Role.ValueString()},
 		"domainRestrictionIds": normalize[client.UUID](data.Domains),
 		"ssoGroup":             data.SsoGroup.ValueStringPointer(),
+		"memberUserIds":        (*[]string)(nil),
 	}
 
 	if err := r.client.Mutate(ctx, &createResult, variables); err == nil {
@@ -165,7 +166,7 @@ func (r *IamGroupResource) Read(ctx context.Context, req resource.ReadRequest, r
 		data.Label = types.StringValue(found.Label)
 		data.Description = types.StringValue(found.Description)
 		data.Role = denormalize(rolesToNames(found.Roles))[0]
-		data.Domains = denormalize(domainsToUuids(found.DomainRestrictions))
+		data.Domains = denormalize(domainsToUuids[string](found.DomainRestrictions))
 		data.SsoGroup = types.StringPointerValue(found.SsoGroup)
 		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 	}
@@ -186,6 +187,7 @@ func (r *IamGroupResource) Update(ctx context.Context, req resource.UpdateReques
 		"roles":                []string{data.Role.ValueString()},
 		"domainRestrictionIds": normalize[client.UUID](data.Domains),
 		"ssoGroup":             data.SsoGroup.ValueStringPointer(),
+		"memberUserIds":        (*[]string)(nil),
 	}
 
 	if err := r.client.Mutate(ctx, &updateResult, variables); err == nil {
@@ -230,10 +232,10 @@ func rolesToNames(roles []struct{ Name string }) []string {
 	return result
 }
 
-func domainsToUuids(domains []struct{ Uuid string }) []string {
-	result := make([]string, len(domains))
+func domainsToUuids[T ~string](domains []struct{ Uuid string }) []T {
+	result := make([]T, len(domains))
 	for i, domain := range domains {
-		result[i] = domain.Uuid
+		result[i] = T(domain.Uuid)
 	}
 	return result
 }
