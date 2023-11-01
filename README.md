@@ -7,7 +7,7 @@
 ![GitHub release](https://img.shields.io/github/v/release/kiwicom/terraform-provider-montecarlo)
 [![Go Report Card](https://goreportcard.com/badge/github.com/kiwicom/terraform-provider-montecarlo)](https://goreportcard.com/report/github.com/kiwicom/terraform-provider-montecarlo)
 ![coverage](https://raw.githubusercontent.com/kiwicom/terraform-provider-montecarlo/badges/.badges/master/coverage.svg)
-![milestone](https://img.shields.io/github/milestones/progress/kiwicom/terraform-provider-montecarlo/1)  
+![milestone](https://img.shields.io/github/milestones/progress/kiwicom/terraform-provider-montecarlo/2)  
 
 [![Terraform](https://img.shields.io/badge/terraform-%235835CC.svg?style=for-the-badge&logo=terraform&logoColor=white)](https://registry.terraform.io/providers/kiwicom/montecarlo/latest)
 
@@ -39,8 +39,8 @@ Provider initialization with <ins>**Account Service Key**</ins>, which is used t
 ```hcl
 provider "monte_carlo" {
   account_service_key = {
-    id    = "montecarlo"
-    token = "montecarlo"
+    id    = var.montecarlo_api_key_id     #(secret)
+    token = var.montecarlo_api_key_token  #(secret)
   }
 }
 ```

@@ -9,7 +9,7 @@ terraform {
 
 provider "montecarlo" {
   account_service_key = {
-    id    = "montecarlo"  #(secret)
-    token = "montecarlo"  #(secret)
+    id    = var.montecarlo_api_key_id     # (secret)
+    token = var.montecarlo_api_key_token  # (secret)
   }
 }

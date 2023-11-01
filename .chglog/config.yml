@@ -11,12 +11,14 @@ options:
          - fix
          - perf
          - docs
+         - test
   commit_groups:
      title_maps:
        feat: ":sparkles: Features"
        fix: ":bug: Bug Fixes"
        perf: ":zap: Performance Improvements"
        docs: ":books: Documentation (unchanged functionality)"
+       test: ":mag: Tests (unchanged functionality)"
   header:
     pattern: "^(\\w*)(?:\\(([\\w\\$\\.\\-\\*\\s\\:\\|\\-]*)\\))?\\:\\s(.*)$"
     pattern_maps:
