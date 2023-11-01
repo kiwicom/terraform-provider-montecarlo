@@ -78,7 +78,7 @@ resource "montecarlo_iam_member" "test" {
 
 func initIamMemberMonteCarloClient(groupName, groupNameUpdated, memberEmail, memberId string) client.MonteCarloClient {
 	mcClient := cmock.MonteCarloClient{}
-	mcClient.On("Query", mock.Anything, mock.AnythingOfType("*client.GetUsersInAccount"), mock.MatchedBy(func(in map[string]interface{}) bool {
+	readUser := mcClient.On("Query", mock.Anything, mock.AnythingOfType("*client.GetUsersInAccount"), mock.MatchedBy(func(in map[string]interface{}) bool {
 		return in["email"] == memberEmail && in["after"] == (*string)(nil)
 	})).Return(nil).Run(func(args mock.Arguments) {
 		getResult := args.Get(1).(*client.GetUsersInAccount)
@@ -96,190 +96,51 @@ func initIamMemberMonteCarloClient(groupName, groupNameUpdated, memberEmail, mem
 			Roles:              []struct{ Name string }{{Name: "mcd/owner"}},
 			DomainRestrictions: []struct{ Uuid string }{},
 			SsoGroup:           nil,
+		}, {
+			Name:               groupNameUpdated,
+			Label:              groupNameUpdated,
+			Description:        "",
+			Roles:              []struct{ Name string }{{Name: "mcd/owner"}},
+			DomainRestrictions: []struct{ Uuid string }{},
+			SsoGroup:           nil,
 		}}
 	})
 
 	// create operation
-	mcClient.On("Mutate", mock.Anything, mock.AnythingOfType("*client.CreateOrUpdateAuthorizationGroup"), mock.MatchedBy(func(in map[string]interface{}) bool {
-		roles, rolesOk := in["roles"].([]string)
-		domainRestrictions, domainRestrictionsOk := in["domainRestrictionIds"].([]client.UUID)
-		memberUserIds, memberUserIdsOk := in["memberUserIds"].([]string)
-		return in["name"] == groupName &&
-			in["label"] == groupName &&
-			in["description"] == "" &&
-			memberUserIdsOk && len(memberUserIds) == 1 && memberUserIds[0] == memberId &&
-			rolesOk && len(roles) == 1 && roles[0] == "mcd/owner" &&
-			domainRestrictionsOk && len(domainRestrictions) == 0 &&
-			in["ssoGroup"] == (*string)(nil)
+	mcClient.On("Mutate", mock.Anything, mock.AnythingOfType("*client.UpdateUserAuthorizationGroupMembership"), mock.MatchedBy(func(in map[string]interface{}) bool {
+		groupNames, groupNamesOk := in["groupNames"].([]string)
+		return in["memberUserId"] == memberId && groupNamesOk && len(groupNames) == 1 && groupNames[0] == groupName
 	})).Return(nil).Run(func(args mock.Arguments) {
-		createResult := args.Get(1).(*client.CreateOrUpdateAuthorizationGroup)
-		createResult.CreateOrUpdateAuthorizationGroup.AuthorizationGroup = client.AuthorizationGroup{
-			Name:               groupName,
-			Label:              groupName,
-			Description:        "",
-			Roles:              []struct{ Name string }{{Name: "mcd/owner"}},
-			DomainRestrictions: []struct{ Uuid string }{},
-			SsoGroup:           nil,
-			Users: []client.User{{
-				CognitoUserId: memberId,
-				Email:         memberEmail,
-			}},
-		}
-
-		mcClient.ExpectedCalls = slices.DeleteFunc(mcClient.ExpectedCalls, func(call *mock.Call) bool {
-			return call.Arguments.Is(mock.Anything, mock.AnythingOfType("*client.GetAuthorizationGroups"), mock.Anything)
-		})
-		mcClient.On("Query", mock.Anything, mock.AnythingOfType("*client.GetAuthorizationGroups"), mock.Anything).Return(nil).Run(func(args mock.Arguments) {
-			getResult := args.Get(1).(*client.GetAuthorizationGroups)
-			getResult.GetAuthorizationGroups = []client.AuthorizationGroup{{
-				Name:               groupName,
-				Label:              groupName,
-				Description:        "",
-				Roles:              []struct{ Name string }{{Name: "mcd/owner"}},
-				DomainRestrictions: []struct{ Uuid string }{},
-				SsoGroup:           nil,
-				Users: []client.User{{
-					CognitoUserId: memberId,
-					Email:         memberEmail,
-				}},
-			}}
+		mcClient.ExpectedCalls = slices.DeleteFunc(mcClient.ExpectedCalls, func(call *mock.Call) bool { return call.Arguments.Is(readUser.Arguments...) })
+		readUser = mcClient.On("Query", mock.Anything, mock.AnythingOfType("*client.GetUsersInAccount"), mock.MatchedBy(func(in map[string]interface{}) bool {
+			return in["email"] == memberEmail && in["after"] == (*string)(nil)
+		})).Return(nil).Run(func(args mock.Arguments) {
+			getResult := args.Get(1).(*client.GetUsersInAccount)
+			node := client.User{CognitoUserId: memberId, IsSso: false, Email: memberEmail}
+			node.Auth.Groups = []string{groupName}
+			getResult.GetUsersInAccount.Edges = []struct{ Node client.User }{{Node: node}}
 		})
 	})
 
 	// delete operation
-	mcClient.On("Mutate", mock.Anything, mock.AnythingOfType("*client.CreateOrUpdateAuthorizationGroup"), mock.MatchedBy(func(in map[string]interface{}) bool {
-		roles, rolesOk := in["roles"].([]string)
-		domainRestrictions, domainRestrictionsOk := in["domainRestrictionIds"].([]client.UUID)
-		memberUserIds, memberUserIdsOk := in["memberUserIds"].([]string)
-		return in["name"] == groupName &&
-			in["label"] == groupName &&
-			in["description"] == "" &&
-			memberUserIdsOk && len(memberUserIds) == 0 &&
-			rolesOk && len(roles) == 1 && roles[0] == "mcd/owner" &&
-			domainRestrictionsOk && len(domainRestrictions) == 0 &&
-			in["ssoGroup"] == (*string)(nil)
-	})).Return(nil).Run(func(args mock.Arguments) {
-		createResult := args.Get(1).(*client.CreateOrUpdateAuthorizationGroup)
-		createResult.CreateOrUpdateAuthorizationGroup.AuthorizationGroup = client.AuthorizationGroup{
-			Name:               groupName,
-			Label:              groupName,
-			Description:        "",
-			Roles:              []struct{ Name string }{{Name: "mcd/owner"}},
-			DomainRestrictions: []struct{ Uuid string }{},
-			SsoGroup:           nil,
-			Users:              []client.User{},
-		}
-
-		mcClient.ExpectedCalls = slices.DeleteFunc(mcClient.ExpectedCalls, func(call *mock.Call) bool {
-			return call.Arguments.Is(mock.Anything, mock.AnythingOfType("*client.GetAuthorizationGroups"), mock.Anything)
-		})
-		mcClient.On("Query", mock.Anything, mock.AnythingOfType("*client.GetAuthorizationGroups"), mock.Anything).Return(nil).Run(func(args mock.Arguments) {
-			getResult := args.Get(1).(*client.GetAuthorizationGroups)
-			getResult.GetAuthorizationGroups = []client.AuthorizationGroup{{
-				Name:               groupName,
-				Label:              groupName,
-				Description:        "",
-				Roles:              []struct{ Name string }{{Name: "mcd/owner"}},
-				DomainRestrictions: []struct{ Uuid string }{},
-				SsoGroup:           nil,
-				Users:              []client.User{},
-			}, {
-				Name:               groupNameUpdated,
-				Label:              groupNameUpdated,
-				Description:        "",
-				Roles:              []struct{ Name string }{{Name: "mcd/owner"}},
-				DomainRestrictions: []struct{ Uuid string }{},
-				SsoGroup:           nil,
-				Users:              []client.User{},
-			}}
-		})
-	})
+	mcClient.On("Mutate", mock.Anything, mock.AnythingOfType("*client.UpdateUserAuthorizationGroupMembership"), mock.MatchedBy(func(in map[string]interface{}) bool {
+		groupNames, groupNamesOk := in["groupNames"].([]string)
+		return in["memberUserId"] == memberId && groupNamesOk && len(groupNames) == 0
+	})).Return(nil)
 
 	// update
-	mcClient.On("Mutate", mock.Anything, mock.AnythingOfType("*client.CreateOrUpdateAuthorizationGroup"), mock.MatchedBy(func(in map[string]interface{}) bool {
-		roles, rolesOk := in["roles"].([]string)
-		domainRestrictions, domainRestrictionsOk := in["domainRestrictionIds"].([]client.UUID)
-		memberUserIds, memberUserIdsOk := in["memberUserIds"].([]string)
-		return in["name"] == groupNameUpdated &&
-			in["label"] == groupNameUpdated &&
-			in["description"] == "" &&
-			memberUserIdsOk && len(memberUserIds) == 1 && memberUserIds[0] == memberId &&
-			rolesOk && len(roles) == 1 && roles[0] == "mcd/owner" &&
-			domainRestrictionsOk && len(domainRestrictions) == 0 &&
-			in["ssoGroup"] == (*string)(nil)
+	mcClient.On("Mutate", mock.Anything, mock.AnythingOfType("*client.UpdateUserAuthorizationGroupMembership"), mock.MatchedBy(func(in map[string]interface{}) bool {
+		groupNames, groupNamesOk := in["groupNames"].([]string)
+		return in["memberUserId"] == memberId && groupNamesOk && slices.Contains(groupNames, groupNameUpdated)
 	})).Return(nil).Run(func(args mock.Arguments) {
-		createResult := args.Get(1).(*client.CreateOrUpdateAuthorizationGroup)
-		createResult.CreateOrUpdateAuthorizationGroup.AuthorizationGroup = client.AuthorizationGroup{
-			Name:               groupNameUpdated,
-			Label:              groupNameUpdated,
-			Description:        "",
-			Roles:              []struct{ Name string }{{Name: "mcd/owner"}},
-			DomainRestrictions: []struct{ Uuid string }{},
-			SsoGroup:           nil,
-			Users: []client.User{{
-				CognitoUserId: memberId,
-				Email:         memberEmail,
-			}},
-		}
-
-		mcClient.ExpectedCalls = slices.DeleteFunc(mcClient.ExpectedCalls, func(call *mock.Call) bool {
-			return call.Arguments.Is(mock.Anything, mock.AnythingOfType("*client.GetAuthorizationGroups"), mock.Anything)
-		})
-		mcClient.On("Query", mock.Anything, mock.AnythingOfType("*client.GetAuthorizationGroups"), mock.Anything).Return(nil).Run(func(args mock.Arguments) {
-			getResult := args.Get(1).(*client.GetAuthorizationGroups)
-			getResult.GetAuthorizationGroups = []client.AuthorizationGroup{{
-				Name:               groupNameUpdated,
-				Label:              groupNameUpdated,
-				Description:        "",
-				Roles:              []struct{ Name string }{{Name: "mcd/owner"}},
-				DomainRestrictions: []struct{ Uuid string }{},
-				SsoGroup:           nil,
-				Users: []client.User{{
-					CognitoUserId: memberId,
-					Email:         memberEmail,
-				}},
-			}}
-		})
-	})
-
-	// delete after update operation
-	mcClient.On("Mutate", mock.Anything, mock.AnythingOfType("*client.CreateOrUpdateAuthorizationGroup"), mock.MatchedBy(func(in map[string]interface{}) bool {
-		roles, rolesOk := in["roles"].([]string)
-		domainRestrictions, domainRestrictionsOk := in["domainRestrictionIds"].([]client.UUID)
-		memberUserIds, memberUserIdsOk := in["memberUserIds"].([]string)
-		return in["name"] == groupNameUpdated &&
-			in["label"] == groupNameUpdated &&
-			in["description"] == "" &&
-			memberUserIdsOk && len(memberUserIds) == 0 &&
-			rolesOk && len(roles) == 1 && roles[0] == "mcd/owner" &&
-			domainRestrictionsOk && len(domainRestrictions) == 0 &&
-			in["ssoGroup"] == (*string)(nil)
-	})).Return(nil).Run(func(args mock.Arguments) {
-		createResult := args.Get(1).(*client.CreateOrUpdateAuthorizationGroup)
-		createResult.CreateOrUpdateAuthorizationGroup.AuthorizationGroup = client.AuthorizationGroup{
-			Name:               groupNameUpdated,
-			Label:              groupNameUpdated,
-			Description:        "",
-			Roles:              []struct{ Name string }{{Name: "mcd/owner"}},
-			DomainRestrictions: []struct{ Uuid string }{},
-			SsoGroup:           nil,
-			Users:              []client.User{},
-		}
-
-		mcClient.ExpectedCalls = slices.DeleteFunc(mcClient.ExpectedCalls, func(call *mock.Call) bool {
-			return call.Arguments.Is(mock.Anything, mock.AnythingOfType("*client.GetAuthorizationGroups"), mock.Anything)
-		})
-		mcClient.On("Query", mock.Anything, mock.AnythingOfType("*client.GetAuthorizationGroups"), mock.Anything).Return(nil).Run(func(args mock.Arguments) {
-			getResult := args.Get(1).(*client.GetAuthorizationGroups)
-			getResult.GetAuthorizationGroups = []client.AuthorizationGroup{{
-				Name:               groupNameUpdated,
-				Label:              groupNameUpdated,
-				Description:        "",
-				Roles:              []struct{ Name string }{{Name: "mcd/owner"}},
-				DomainRestrictions: []struct{ Uuid string }{},
-				SsoGroup:           nil,
-				Users:              []client.User{},
-			}}
+		mcClient.ExpectedCalls = slices.DeleteFunc(mcClient.ExpectedCalls, func(call *mock.Call) bool { return call.Arguments.Is(readUser.Arguments...) })
+		readUser = mcClient.On("Query", mock.Anything, mock.AnythingOfType("*client.GetUsersInAccount"), mock.MatchedBy(func(in map[string]interface{}) bool {
+			return in["email"] == memberEmail && in["after"] == (*string)(nil)
+		})).Return(nil).Run(func(args mock.Arguments) {
+			getResult := args.Get(1).(*client.GetUsersInAccount)
+			node := client.User{CognitoUserId: memberId, IsSso: false, Email: memberEmail}
+			node.Auth.Groups = []string{groupNameUpdated}
+			getResult.GetUsersInAccount.Edges = []struct{ Node client.User }{{Node: node}}
 		})
 	})
 	return &mcClient

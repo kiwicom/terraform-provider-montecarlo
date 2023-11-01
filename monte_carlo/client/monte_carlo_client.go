@@ -210,7 +210,7 @@ type GetTables struct {
 	} `graphql:"getTables(dwId: $dwId, first: $first, after: $after, isDeleted: $isDeleted, isExcluded: $isExcluded)"`
 }
 
-type User struct {
+type AuthorizationGroupUser struct {
 	CognitoUserId string
 	Email         string
 	FirstName     string
@@ -226,13 +226,13 @@ type AuthorizationGroup struct {
 	Roles              []struct{ Name string }
 	DomainRestrictions []struct{ Uuid string }
 	SsoGroup           *string
-	Users              []User
+	Users              []AuthorizationGroupUser
 }
 
 type CreateOrUpdateAuthorizationGroup struct {
 	CreateOrUpdateAuthorizationGroup struct {
 		AuthorizationGroup AuthorizationGroup
-	} `graphql:"createOrUpdateAuthorizationGroup(name: $name, label: $label, description: $description, roles: $roles, memberUserIds: $memberUserIds, domainRestrictionIds: $domainRestrictionIds, ssoGroup: $ssoGroup)"`
+	} `graphql:"createOrUpdateAuthorizationGroup(name: $name, label: $label, description: $description, roles: $roles, domainRestrictionIds: $domainRestrictionIds, ssoGroup: $ssoGroup)"`
 }
 
 type GetAuthorizationGroups struct {
@@ -243,6 +243,17 @@ type DeleteAuthorizationGroup struct {
 	DeleteAuthorizationGroup struct {
 		Deleted int
 	} `graphql:"deleteAuthorizationGroup(name: $name)"`
+}
+
+type User struct {
+	CognitoUserId string
+	Email         string
+	FirstName     string
+	LastName      string
+	IsSso         bool
+	Auth          struct {
+		Groups []string
+	}
 }
 
 type GetUsersInAccount struct {
@@ -256,4 +267,19 @@ type GetUsersInAccount struct {
 			HasNextPage bool
 		}
 	} `graphql:"getUsersInAccount(email: $email, first: $first, after: $after)"`
+}
+
+type UpdateUserAuthorizationGroupMembership struct {
+	UpdateUserAuthorizationGroupMembership struct {
+		AddedToGroups []struct {
+			Name        string
+			Label       string
+			Description string
+		}
+		RemovedFromGroups []struct {
+			Name        string
+			Label       string
+			Description string
+		}
+	} `graphql:"updateUserAuthorizationGroupMembership(memberUserId: $memberUserId, groupNames: $groupNames)"`
 }

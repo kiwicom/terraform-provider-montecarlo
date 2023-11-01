@@ -122,7 +122,6 @@ func (r *IamGroupResource) Create(ctx context.Context, req resource.CreateReques
 		"roles":                []string{data.Role.ValueString()},
 		"domainRestrictionIds": normalize[client.UUID](data.Domains),
 		"ssoGroup":             data.SsoGroup.ValueStringPointer(),
-		"memberUserIds":        (*[]string)(nil),
 	}
 
 	if err := r.client.Mutate(ctx, &createResult, variables); err == nil {
@@ -187,7 +186,6 @@ func (r *IamGroupResource) Update(ctx context.Context, req resource.UpdateReques
 		"roles":                []string{data.Role.ValueString()},
 		"domainRestrictionIds": normalize[client.UUID](data.Domains),
 		"ssoGroup":             data.SsoGroup.ValueStringPointer(),
-		"memberUserIds":        (*[]string)(nil),
 	}
 
 	if err := r.client.Mutate(ctx, &updateResult, variables); err == nil {
