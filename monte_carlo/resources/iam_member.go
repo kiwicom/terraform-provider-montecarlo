@@ -111,7 +111,6 @@ func (r *IamMemberResource) Create(ctx context.Context, req resource.CreateReque
 		return
 	}
 
-	groupName := strings.Split(data.Group.ValueString(), "groups/")[1]
 	getGroupResult := client.GetAuthorizationGroups{}
 	variables = map[string]interface{}{}
 	if err := r.client.Query(ctx, &getGroupResult, variables); err != nil {
@@ -120,39 +119,30 @@ func (r *IamMemberResource) Create(ctx context.Context, req resource.CreateReque
 		return
 	}
 
-	var found *client.AuthorizationGroup
+	var group *client.AuthorizationGroup
+	groupName := strings.Split(data.Group.ValueString(), "groups/")[1]
 	if index := slices.IndexFunc(getGroupResult.GetAuthorizationGroups, func(group client.AuthorizationGroup) bool {
-		return !group.IsManaged && group.Name == groupName
-	}); index >= 0 && getGroupResult.GetAuthorizationGroups[index].SsoGroup == nil {
-		found = &getGroupResult.GetAuthorizationGroups[index]
+		return group.SsoGroup == nil && group.Name == groupName
+	}); index >= 0 {
+		group = &getGroupResult.GetAuthorizationGroups[index]
 	} else {
 		to_print := fmt.Sprintf("Group %s not found or is SSO managed", data.Group.ValueString())
 		resp.Diagnostics.AddError(to_print, "")
 		return
 	}
 
-	memberUserIds := make([]string, len(found.Users)+1)
-	memberUserIds[len(found.Users)] = getUserResult.GetUsersInAccount.Edges[0].Node.CognitoUserId
-	for i, user := range found.Users {
-		memberUserIds[i] = user.CognitoUserId
-	}
-
-	updateResult := client.CreateOrUpdateAuthorizationGroup{}
+	user := &getUserResult.GetUsersInAccount.Edges[0].Node
+	updateResult := client.UpdateUserAuthorizationGroupMembership{}
 	variables = map[string]interface{}{
-		"name":                 found.Name,
-		"label":                found.Label,
-		"description":          found.Description,
-		"roles":                rolesToNames(found.Roles),
-		"domainRestrictionIds": domainsToUuids[client.UUID](found.DomainRestrictions),
-		"ssoGroup":             found.SsoGroup,
-		"memberUserIds":        memberUserIds,
+		"memberUserId": user.CognitoUserId,
+		"groupNames":   append(user.Auth.Groups, group.Name),
 	}
 
 	if err := r.client.Mutate(ctx, &updateResult, variables); err != nil {
-		to_print := fmt.Sprintf("MC client 'createOrUpdateAuthorizationGroup' mutation result - %s", err.Error())
+		to_print := fmt.Sprintf("MC client 'updateUserAuthorizationGroupMembership' mutation result - %s", err.Error())
 		resp.Diagnostics.AddError(to_print, "")
 	} else {
-		data.MemberId = types.StringValue(getUserResult.GetUsersInAccount.Edges[0].Node.CognitoUserId)
+		data.MemberId = types.StringValue(user.CognitoUserId)
 		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 	}
 }
@@ -172,17 +162,20 @@ func (r *IamMemberResource) Read(ctx context.Context, req resource.ReadRequest, 
 		"after": (*string)(nil),
 	}
 
+	var foundUser *client.User
 	if err := r.client.Query(ctx, &getUserResult, variables); err != nil {
 		to_print := fmt.Sprintf("MC client 'getUsersInAccount' query result - %s", err.Error())
 		resp.Diagnostics.AddError(to_print, "")
 		return
-	} else if len(getUserResult.GetUsersInAccount.Edges) == 0 {
+	} else if len(getUserResult.GetUsersInAccount.Edges) >= 1 {
+		foundUser = &getUserResult.GetUsersInAccount.Edges[0].Node
+	} else {
 		to_print := fmt.Sprintf("User %s not found", userEmail)
-		resp.Diagnostics.AddError(to_print, "")
+		resp.Diagnostics.AddWarning(to_print, "")
+		resp.State.RemoveResource(ctx)
 		return
 	}
 
-	groupName := strings.Split(data.Group.ValueString(), "groups/")[1]
 	getGroupResult := client.GetAuthorizationGroups{}
 	variables = map[string]interface{}{}
 	if err := r.client.Query(ctx, &getGroupResult, variables); err != nil {
@@ -191,20 +184,22 @@ func (r *IamMemberResource) Read(ctx context.Context, req resource.ReadRequest, 
 		return
 	}
 
-	var found *client.AuthorizationGroup
-	for _, group := range getGroupResult.GetAuthorizationGroups {
-		if !group.IsManaged && group.Name == groupName {
-			found = &group
-			break
-		}
-	}
-
-	if found == nil || found.SsoGroup != nil {
+	var group *client.AuthorizationGroup
+	groupName := strings.Split(data.Group.ValueString(), "groups/")[1]
+	if index := slices.IndexFunc(getGroupResult.GetAuthorizationGroups, func(group client.AuthorizationGroup) bool {
+		return group.SsoGroup == nil && group.Name == groupName
+	}); index >= 0 {
+		group = &getGroupResult.GetAuthorizationGroups[index]
+	} else {
+		data.Group = types.StringNull()
 		to_print := fmt.Sprintf("Group %s not found or is SSO managed", data.Group.ValueString())
 		resp.Diagnostics.AddWarning(to_print, "")
 		resp.State.RemoveResource(ctx)
-	} else if !slices.Contains(found.Users, getUserResult.GetUsersInAccount.Edges[0].Node) {
-		to_print := fmt.Sprintf("User %s not found in group %s", userEmail, data.Group.ValueString())
+		return
+	}
+
+	if !slices.Contains(foundUser.Auth.Groups, group.Name) {
+		to_print := fmt.Sprintf("User %s is not a member of group %s", userEmail, data.Group.ValueString())
 		resp.Diagnostics.AddWarning(to_print, "")
 		resp.State.RemoveResource(ctx)
 	} else {
@@ -214,7 +209,10 @@ func (r *IamMemberResource) Read(ctx context.Context, req resource.ReadRequest, 
 }
 
 func (r *IamMemberResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	// TODO
+	resp.Diagnostics.AddError(
+		"Resource 'montecarlo_iam_member' does not support updates",
+		"If you encounter this error please raise a issue at 'https://github.com/kiwicom/terraform-provider-montecarlo'",
+	)
 }
 
 func (r *IamMemberResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -224,45 +222,37 @@ func (r *IamMemberResource) Delete(ctx context.Context, req resource.DeleteReque
 		return
 	}
 
-	groupName := strings.Split(data.Group.ValueString(), "groups/")[1]
-	getGroupResult := client.GetAuthorizationGroups{}
-	variables := map[string]interface{}{}
-	if err := r.client.Query(ctx, &getGroupResult, variables); err != nil {
-		to_print := fmt.Sprintf("MC client 'GetAuthorizationGroups' query result - %s", err.Error())
-		resp.Diagnostics.AddError(to_print, "")
-		return
+	userEmail := strings.Split(data.Member.ValueString(), "user:")[1]
+	getUserResult := client.GetUsersInAccount{}
+	variables := map[string]interface{}{
+		"email": userEmail,
+		"first": 1,
+		"after": (*string)(nil),
 	}
 
-	var found *client.AuthorizationGroup
-	if index := slices.IndexFunc(getGroupResult.GetAuthorizationGroups, func(group client.AuthorizationGroup) bool {
-		return !group.IsManaged && group.Name == groupName
-	}); index >= 0 && getGroupResult.GetAuthorizationGroups[index].SsoGroup == nil {
-		found = &getGroupResult.GetAuthorizationGroups[index]
+	var foundUser *client.User
+	if err := r.client.Query(ctx, &getUserResult, variables); err != nil {
+		to_print := fmt.Sprintf("MC client 'getUsersInAccount' query result - %s", err.Error())
+		resp.Diagnostics.AddError(to_print, "")
+		return
+	} else if len(getUserResult.GetUsersInAccount.Edges) >= 1 {
+		foundUser = &getUserResult.GetUsersInAccount.Edges[0].Node
 	} else {
-		to_print := fmt.Sprintf("Group %s not found or is SSO managed", data.Group.ValueString())
+		to_print := fmt.Sprintf("User %s not found", userEmail)
 		resp.Diagnostics.AddWarning(to_print, "")
 		return
 	}
 
-	memberUserIds := make([]string, len(found.Users))
-	for i, user := range found.Users {
-		memberUserIds[i] = user.CognitoUserId
-	}
-
-	updateResult := client.CreateOrUpdateAuthorizationGroup{}
-	memberUserIds = slices.DeleteFunc(memberUserIds, func(userId string) bool { return userId == data.MemberId.ValueString() })
+	updateResult := client.UpdateUserAuthorizationGroupMembership{}
 	variables = map[string]interface{}{
-		"name":                 found.Name,
-		"label":                found.Label,
-		"description":          found.Description,
-		"roles":                rolesToNames(found.Roles),
-		"domainRestrictionIds": domainsToUuids[client.UUID](found.DomainRestrictions),
-		"ssoGroup":             found.SsoGroup,
-		"memberUserIds":        memberUserIds,
+		"memberUserId": foundUser.CognitoUserId,
+		"groupNames": slices.DeleteFunc(foundUser.Auth.Groups, func(groupName string) bool {
+			return groupName == strings.Split(data.Group.ValueString(), "groups/")[1]
+		}),
 	}
 
 	if err := r.client.Mutate(ctx, &updateResult, variables); err != nil {
-		to_print := fmt.Sprintf("MC client 'createOrUpdateAuthorizationGroup' mutation result - %s", err.Error())
+		to_print := fmt.Sprintf("MC client 'updateUserAuthorizationGroupMembership' mutation result - %s", err.Error())
 		resp.Diagnostics.AddError(to_print, "")
 	}
 }
