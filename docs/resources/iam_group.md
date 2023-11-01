@@ -10,7 +10,7 @@ description: |-
 Represents a named resource which lets you define _Monte Carlo_ **authorization group** responsible for assigning roles to the users. An authorization group policy is made up of three primary parts:
 
 - a list of permissions
-- a list of group members (not set by this resource)
+- a list of group members (not set by this resource, see [montecarlo_iam_member](iam_member.md))
 - optionally, one or more Monte Carlo domains to restrict the group to
 
 The list of permissions/roles specifies **what can be done** (such as access or edit monitors), and the domain restrictions specify what parts of your data/metadata those users **may access under given permissions**.
@@ -63,24 +63,25 @@ Allowed roles:
 
 - `sso_group` (String, _default:_ `null`) Automatically assignes all of the users from the provided **SSO group** to the authorization group.
 
-  - if set, users cannot be assigned to the authorization group directly
+  - if set, users cannot be assigned to the authorization group directly (see [montecarlo_iam_member](iam_member.md))
 
   - if set, when authorization group already exists, all of the previous user assignments will be destroyed.
 
 ### Read-Only
 
 <a id="attr--label"></a>
-- `label` (String) Authorization group **label/name** as it should be presented in the _Monte Carlo_ UI. Implementation of this resource will always set this attribute to the same value as the `name` attribute ([see above](#attr--name)) to avoid confusion.
+- `label` (String) Authorization group **label/name** as it should be presented in the _Monte Carlo_ UI. Implementation of this resource will always set this attribute to the same value as the `name` attribute ([see above](#attr--name)) to avoid confusion and to make integrations of resource [montecarlo_iam_member](iam_member.md) easier.
 
 
 
 ## Import
 
+Only non-managed (custom) groups can be imported.
 This resource can be imported using the import ID with following format:
 
 * `{{group_name}}`
 
-In **Terraform v1.5.0** and later, use an [`import` block](https://developer.hashicorp.com/terraform/language/import) to import a _Transactional Warehouse_ using one of the formats above. For example:
+In **Terraform v1.5.0** and later, use an [`import` block](https://developer.hashicorp.com/terraform/language/import) to import a _Authorization Group_ using one of the formats above. For example:
 
 ```terraform
 import {
