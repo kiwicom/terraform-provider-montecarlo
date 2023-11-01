@@ -1,5 +1,33 @@
 
 
+<a name="v0.3.0"></a>
+## v0.3.0
+
+> 2023-11-01
+
+- Full diff - **[v0.2.1...v0.3.0](https://github.com/kiwicom/terraform-provider-montecarlo/compare/v0.2.1...v0.3.0)**  
+
+### :sparkles: Features
+
+* **iam:** IAM member resource implemented ([#53](https://github.com/kiwicom/terraform-provider-montecarlo/issues/53))
+* **iam:** authorization groups resource implementation ([#50](https://github.com/kiwicom/terraform-provider-montecarlo/issues/50))
+
+### :bug: Bug Fixes
+
+* **iam:** iam_member using groups API for assignment ([#61](https://github.com/kiwicom/terraform-provider-montecarlo/pull/61))
+
+### :books: Documentation (unchanged functionality)
+
+* **gen:** removed attributes for docs generation ([#51](https://github.com/kiwicom/terraform-provider-montecarlo/issues/51))
+* **resources:** iam_member documentation and examples ([#63](https://github.com/kiwicom/terraform-provider-montecarlo/issues/63))
+* **resources:** iam_group documentation and examples ([#60](https://github.com/kiwicom/terraform-provider-montecarlo/issues/60))
+
+### :mag: Tests (unchanged functionality)
+
+* **iam:** member assignment acceptance tests ([#55](https://github.com/kiwicom/terraform-provider-montecarlo/issues/55))
+* **iam:** IAM group resource acceptance tests ([#54](https://github.com/kiwicom/terraform-provider-montecarlo/issues/54))
+
+
 <a name="v0.2.1"></a>
 ## v0.2.1
 
