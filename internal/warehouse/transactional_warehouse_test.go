@@ -1,13 +1,13 @@
-package resources_test
+package warehouse_test
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/client"
-	cmock "github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/client/mock"
-	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/common"
-	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/provider"
+	cmock "github.com/kiwicom/terraform-provider-montecarlo/client/mock"
+	"github.com/kiwicom/terraform-provider-montecarlo/internal"
+	"github.com/kiwicom/terraform-provider-montecarlo/client"
+	"github.com/kiwicom/terraform-provider-montecarlo/internal/common"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
@@ -30,7 +30,7 @@ func TestAccTransactionalWarehouseResource(t *testing.T) {
 		uuid, connectionUuid, dcId, name1, name2, username1, username2, password1, password2,
 	)}
 	providerFactories := map[string]func() (tfprotov6.ProviderServer, error){
-		"montecarlo": providerserver.NewProtocol6WithError(provider.New("test", providerContext)()),
+		"montecarlo": providerserver.NewProtocol6WithError(internal.New("test", providerContext)()),
 	}
 
 	resource.Test(t, resource.TestCase{

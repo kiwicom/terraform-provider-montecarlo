@@ -1,13 +1,14 @@
-package datasources_test
+package warehouse_test
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/client"
-	cmock "github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/client/mock"
-	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/common"
-	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/provider"
+	"github.com/kiwicom/terraform-provider-montecarlo/client"
+	cmock "github.com/kiwicom/terraform-provider-montecarlo/client/mock"
+	"github.com/kiwicom/terraform-provider-montecarlo/internal"
+	"github.com/kiwicom/terraform-provider-montecarlo/internal/common"
+
 	"github.com/stretchr/testify/mock"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
@@ -28,13 +29,12 @@ func TestAccWarehouseDataSource(t *testing.T) {
 		project1, dataset1, table1)
 	assignment2 := fmt.Sprintf("MCON++a84380ed-b962-4bd3-b150-04bc38a209d5++e7c59fd6-7ca8-41e7-8325-062ea38d3df5++table++%s:%s.%s",
 		project2, dataset2, table2)
-
 	providerContext := &common.ProviderContext{MonteCarloClient: initWarehouseMonteCarloClient(
 		warehouseUuid, accountUuid, assignment1, assignment2, project1, project2,
 		dataset1, dataset2, table1, table2,
 	)}
 	providerFactories := map[string]func() (tfprotov6.ProviderServer, error){
-		"montecarlo": providerserver.NewProtocol6WithError(provider.New("test", providerContext)()),
+		"montecarlo": providerserver.NewProtocol6WithError(internal.New("test", providerContext)()),
 	}
 
 	resource.Test(t, resource.TestCase{

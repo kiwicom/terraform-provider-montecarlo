@@ -1,11 +1,11 @@
-package datasources
+package warehouse
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/client"
-	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/common"
+	"github.com/kiwicom/terraform-provider-montecarlo/client"
+	"github.com/kiwicom/terraform-provider-montecarlo/internal/common"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"

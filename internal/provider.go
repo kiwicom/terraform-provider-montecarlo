@@ -1,13 +1,13 @@
-package provider
+package internal
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/client"
-	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/common"
-	datasources "github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/data_sources"
-	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/resources"
+	"github.com/kiwicom/terraform-provider-montecarlo/client"
+	"github.com/kiwicom/terraform-provider-montecarlo/internal/authorization"
+	"github.com/kiwicom/terraform-provider-montecarlo/internal/common"
+	"github.com/kiwicom/terraform-provider-montecarlo/internal/warehouse"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -93,17 +93,17 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 
 func (p *Provider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		resources.NewBigQueryWarehouseResource,
-		resources.NewTransactionalWarehouseResource,
-		resources.NewDomainResource,
-		resources.NewIamGroupResource,
-		resources.NewIamMemberResource,
+		warehouse.NewBigQueryWarehouseResource,
+		warehouse.NewTransactionalWarehouseResource,
+		NewDomainResource,
+		authorization.NewIamGroupResource,
+		authorization.NewIamMemberResource,
 	}
 }
 
 func (p *Provider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
-		datasources.NewWarehouseDatasource,
+		warehouse.NewWarehouseDatasource,
 	}
 }
 

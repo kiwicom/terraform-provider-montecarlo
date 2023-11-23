@@ -1,13 +1,14 @@
-package resources_test
+package warehouse_test
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/client"
-	cmock "github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/client/mock"
-	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/common"
-	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/provider"
+	"github.com/kiwicom/terraform-provider-montecarlo/client"
+	cmock "github.com/kiwicom/terraform-provider-montecarlo/client/mock"
+	"github.com/kiwicom/terraform-provider-montecarlo/internal"
+	"github.com/kiwicom/terraform-provider-montecarlo/internal/common"
+
 	"github.com/stretchr/testify/mock"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
@@ -18,7 +19,7 @@ import (
 func TestAccBigQueryWarehouseResource(t *testing.T) {
 	providerContext := &common.ProviderContext{MonteCarloClient: initBigQueryWarehouseMonteCarloClient()}
 	providerFactories := map[string]func() (tfprotov6.ProviderServer, error){
-		"montecarlo": providerserver.NewProtocol6WithError(provider.New("test", providerContext)()),
+		"montecarlo": providerserver.NewProtocol6WithError(internal.New("test", providerContext)()),
 	}
 
 	resource.Test(t, resource.TestCase{

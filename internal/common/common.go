@@ -3,12 +3,13 @@ package common
 import (
 	"fmt"
 
-	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/client"
+	"github.com/kiwicom/terraform-provider-montecarlo/client"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 // Cyclic types commonly shared in this provider packages
@@ -75,4 +76,20 @@ func Configure[Req resource.ConfigureRequest | datasource.ConfigureRequest](req 
 			fmt.Sprintf("Expected *common.ProviderContext, got: %T. Please report this issue to the provider developers.", providerData))
 		return nil, diags
 	}
+}
+
+func TfStringsTo[T ~string](in []basetypes.StringValue) []T {
+	res := make([]T, len(in))
+	for i, element := range in {
+		res[i] = T(element.ValueString())
+	}
+	return res
+}
+
+func TfStringsFrom(in []string) []types.String {
+	res := make([]types.String, len(in))
+	for i, element := range in {
+		res[i] = types.StringValue(element)
+	}
+	return res
 }

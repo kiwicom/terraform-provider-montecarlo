@@ -1,12 +1,12 @@
-package resources
+package internal
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 
-	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/client"
-	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/common"
+	"github.com/kiwicom/terraform-provider-montecarlo/client"
+	"github.com/kiwicom/terraform-provider-montecarlo/internal/common"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/resourcevalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -18,7 +18,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -128,7 +127,7 @@ func (r *DomainResource) Create(ctx context.Context, req resource.CreateRequest,
 	createResult := client.CreateOrUpdateDomain{}
 	variables := map[string]interface{}{
 		"uuid":        (*client.UUID)(nil),
-		"assignments": normalize[string](data.Assignments),
+		"assignments": common.TfStringsTo[string](data.Assignments),
 		"tags":        common.ToTagPairs(data.Tags),
 		"name":        data.Name.ValueString(),
 		"description": data.Description.ValueString(),
@@ -174,7 +173,7 @@ func (r *DomainResource) Read(ctx context.Context, req resource.ReadRequest, res
 	}
 
 	data.Tags = common.FromTagPairs(getResult.GetDomain.Tags)
-	data.Assignments = denormalize(getResult.GetDomain.Assignments)
+	data.Assignments = common.TfStringsFrom(getResult.GetDomain.Assignments)
 	data.Name = types.StringValue(getResult.GetDomain.Name)
 	data.Description = types.StringValue(getResult.GetDomain.Description)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -190,7 +189,7 @@ func (r *DomainResource) Update(ctx context.Context, req resource.UpdateRequest,
 	createResult := client.CreateOrUpdateDomain{}
 	variables := map[string]interface{}{
 		"uuid":        client.UUID(data.Uuid.ValueString()),
-		"assignments": normalize[string](data.Assignments),
+		"assignments": common.TfStringsTo[string](data.Assignments),
 		"tags":        common.ToTagPairs(data.Tags),
 		"name":        data.Name.ValueString(),
 		"description": data.Description.ValueString(),
@@ -228,20 +227,4 @@ func (r *DomainResource) Delete(ctx context.Context, req resource.DeleteRequest,
 
 func (r *DomainResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("uuid"), req, resp)
-}
-
-func normalize[T ~string](in []basetypes.StringValue) []T {
-	res := make([]T, len(in))
-	for i, element := range in {
-		res[i] = T(element.ValueString())
-	}
-	return res
-}
-
-func denormalize(in []string) []types.String {
-	res := make([]types.String, len(in))
-	for i, element := range in {
-		res[i] = types.StringValue(element)
-	}
-	return res
 }
