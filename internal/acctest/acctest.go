@@ -20,8 +20,8 @@ var TestAccProviderFactories = map[string]func() (tfprotov6.ProviderServer, erro
 
 func TestAccPreCheck(t *testing.T) {
 	if v := os.Getenv("MC_API_KEY_ID"); v == "" {
-		t.Errorf("'MC_API_KEY_ID' must be set for acceptance tests")
+		t.Fatalf("'MC_API_KEY_ID' must be set for acceptance tests")
 	} else if v := os.Getenv("MC_API_KEY_TOKEN"); v == "" {
-		t.Errorf("'MC_API_KEY_TOKEN' must be set for acceptance tests")
+		t.Fatalf("'MC_API_KEY_TOKEN' must be set for acceptance tests")
 	}
 }

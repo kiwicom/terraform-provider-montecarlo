@@ -222,7 +222,7 @@ func (r *BigQueryWarehouseResource) Update(ctx context.Context, req resource.Upd
 		"changes":        client.JSONString(data.ServiceAccountKey.ValueString()),
 		"connectionId":   client.UUID(data.ConnectionUuid.ValueString()),
 		"shouldReplace":  true,
-		"shouldValidate": true,
+		"shouldValidate": false,
 	}
 
 	if err := r.client.Mutate(ctx, &updateResult, variables); err != nil {

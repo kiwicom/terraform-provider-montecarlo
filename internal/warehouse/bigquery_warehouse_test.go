@@ -2,128 +2,78 @@ package warehouse_test
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
-	"github.com/kiwicom/terraform-provider-montecarlo/client"
-	cmock "github.com/kiwicom/terraform-provider-montecarlo/client/mock"
-	"github.com/kiwicom/terraform-provider-montecarlo/internal"
-	"github.com/kiwicom/terraform-provider-montecarlo/internal/common"
+	"github.com/kiwicom/terraform-provider-montecarlo/internal/acctest"
 
-	"github.com/stretchr/testify/mock"
-
-	"github.com/hashicorp/terraform-plugin-framework/providerserver"
-	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
+	"github.com/hashicorp/terraform-plugin-testing/config"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccBigQueryWarehouseResource(t *testing.T) {
-	providerContext := &common.ProviderContext{MonteCarloClient: initBigQueryWarehouseMonteCarloClient()}
-	providerFactories := map[string]func() (tfprotov6.ProviderServer, error){
-		"montecarlo": providerserver.NewProtocol6WithError(internal.New("test", providerContext)()),
+	mc_api_key_id := os.Getenv("MC_API_KEY_ID")
+	mc_api_key_token := os.Getenv("MC_API_KEY_TOKEN")
+
+	collectorUuid := "a08d23fc-00a0-4c36-b568-82e9d0e67ad8"
+	createSa, createSaErr := os.ReadFile("testdata/TestAccBigQueryWarehouseResource/create-sa.json")
+	updateSa, updateSaErr := os.ReadFile("testdata/TestAccBigQueryWarehouseResource/update-sa.json")
+
+	if createSaErr != nil {
+		t.Fatalf("failed to read testdata/TestAccBigQueryWarehouseResource/create-sa.json: %v", createSaErr)
+	} else if updateSaErr != nil {
+		t.Fatalf("failed to read testdata/TestAccBigQueryWarehouseResource/update-sa.json: %v", updateSaErr)
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() {},
-		ProtoV6ProviderFactories: providerFactories,
+		PreCheck: func() { acctest.TestAccPreCheck(t) },
 		Steps: []resource.TestStep{
 			{ // Create and Read testing
-				Config: bigQueryWarehouseConfig("name1", "dataCollector1", "{}"),
+				ProtoV6ProviderFactories: acctest.TestAccProviderFactories,
+				ConfigFile:               config.TestNameFile("create.tf"),
+				ConfigVariables: config.Variables{
+					"montecarlo_api_key_id":    config.StringVariable(mc_api_key_id),
+					"montecarlo_api_key_token": config.StringVariable(mc_api_key_token),
+				},
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "uuid", "8bfc4"),
-					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "connection_uuid", "8cd5a"),
-					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "name", "name1"),
-					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "collector_uuid", "dataCollector1"),
-					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "service_account_key", "{}"),
+					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "name", "test-warehouse"),
+					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "collector_uuid", collectorUuid),
+					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "service_account_key", string(createSa)),
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "deletion_protection", "false"),
 				),
 			},
 			{ // ImportState testing
-				ResourceName:                         "montecarlo_bigquery_warehouse.test",
-				ImportState:                          true,
-				ImportStateVerify:                    true,
-				ImportStateId:                        "8bfc4,8cd5a,dataCollector1",
+				ProtoV6ProviderFactories: acctest.TestAccProviderFactories,
+				ConfigVariables: config.Variables{
+					"montecarlo_api_key_id":    config.StringVariable(mc_api_key_id),
+					"montecarlo_api_key_token": config.StringVariable(mc_api_key_token),
+				},
+				ResourceName:      "montecarlo_bigquery_warehouse.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					uuid := s.RootModule().Resources["montecarlo_bigquery_warehouse.test"].Primary.Attributes["uuid"]
+					connectionUuid := s.RootModule().Resources["montecarlo_bigquery_warehouse.test"].Primary.Attributes["connection_uuid"]
+					return fmt.Sprintf("%[1]s,%[2]s,%[3]s", uuid, connectionUuid, collectorUuid), nil
+				},
 				ImportStateVerifyIdentifierAttribute: "uuid",
 				ImportStateVerifyIgnore:              []string{"deletion_protection", "service_account_key"},
 			},
-			// Update and Read testing
-			{
-				Config: bigQueryWarehouseConfig("name2", "dataCollector1", "{\"json\": \"json\"}"),
+			{ // Update and Read testing
+				ProtoV6ProviderFactories: acctest.TestAccProviderFactories,
+				ConfigFile:               config.TestNameFile("update.tf"),
+				ConfigVariables: config.Variables{
+					"montecarlo_api_key_id":    config.StringVariable(mc_api_key_id),
+					"montecarlo_api_key_token": config.StringVariable(mc_api_key_token),
+				},
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "uuid", "8bfc4"),
-					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "connection_uuid", "8cd5a"),
-					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "name", "name2"),
-					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "collector_uuid", "dataCollector1"),
-					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "service_account_key", "{\"json\": \"json\"}"),
+					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "name", "test-warehouse-updated"),
+					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "collector_uuid", collectorUuid),
+					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "service_account_key", string(updateSa)),
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "deletion_protection", "false"),
 				),
 			},
 		},
 	})
-}
-
-func bigQueryWarehouseConfig(name string, dcid string, saKey string) string {
-	return fmt.Sprintf(`
-provider "montecarlo" {
-  account_service_key = {
-    id    = "montecarlo"
-  	token = "montecarlo"
-  }
-}
-
-resource "montecarlo_bigquery_warehouse" "test" {
-  name                = %[1]q
-  collector_uuid      = %[2]q
-  service_account_key = %[3]q
-  deletion_protection = false
-}
-`, name, dcid, saKey)
-}
-
-func initBigQueryWarehouseMonteCarloClient() client.MonteCarloClient {
-	mcClient := cmock.MonteCarloClient{}
-	// Add connection operations
-	mcClient.On("Mutate", mock.Anything, mock.AnythingOfType("*client.TestBqCredentialsV2"), mock.Anything).Return(nil).Run(func(args mock.Arguments) {
-		arg := args.Get(1).(*client.TestBqCredentialsV2)
-		arg.TestBqCredentialsV2.Key = "testKey"
-		arg.TestBqCredentialsV2.ValidationResult.Success = true
-		arg.TestBqCredentialsV2.ValidationResult.Errors = client.BqTestErrors{}
-		arg.TestBqCredentialsV2.ValidationResult.Warnings = client.BqTestWarnings{}
-	})
-	mcClient.On("Mutate", mock.Anything, mock.AnythingOfType("*client.AddConnection"), mock.Anything).Return(nil).Run(func(args mock.Arguments) {
-		arg := args.Get(1).(*client.AddConnection)
-		arg.AddConnection.Connection.Uuid = "8cd5a"
-		arg.AddConnection.Connection.Warehouse.Uuid = "8bfc4"
-		arg.AddConnection.Connection.Warehouse.Name = "name1"
-	})
-
-	// Read operations
-	readVariables1 := map[string]interface{}{"uuid": client.UUID("8bfc4")}
-	readResponse1 := []byte(fmt.Sprintf(`{"getWarehouse":{"name":"name1","connections":[{"uuid":"8cd5a",`+
-		`"type":"%s"}],"dataCollector":{"uuid":"dataCollector1"}}}`, client.BigQueryConnectionTypeResponse))
-	mcClient.On("ExecRaw", mock.Anything, client.GetWarehouseQuery, readVariables1).Return(readResponse1, nil)
-
-	// Delete operations
-	deleteVariables2 := map[string]interface{}{"connectionId": client.UUID("8cd5a")}
-	mcClient.On("Mutate", mock.Anything, mock.AnythingOfType("*client.RemoveConnection"), deleteVariables2).Return(nil).Run(func(args mock.Arguments) {
-		arg := args.Get(1).(*client.RemoveConnection)
-		arg.RemoveConnection.Success = true
-	})
-
-	// Update operations
-	updateVariables := map[string]interface{}{"dwId": client.UUID("8bfc4"), "name": "name2"}
-	mcClient.On("Mutate", mock.Anything, mock.AnythingOfType("*client.SetWarehouseName"), updateVariables).Return(nil).Run(func(args mock.Arguments) {
-		arg := args.Get(1).(*client.SetWarehouseName)
-		arg.SetWarehouseName.Warehouse.Uuid = "8bfc4"
-		arg.SetWarehouseName.Warehouse.Name = "name2"
-	})
-	mcClient.On("Mutate", mock.Anything, mock.AnythingOfType("*client.UpdateCredentials"), mock.Anything).Return(nil).Run(func(args mock.Arguments) {
-		arg := args.Get(1).(*client.UpdateCredentials)
-		arg.UpdateCredentials.Success = true
-		// after update, read operation must return new results
-		mcClient.On("ExecRaw", mock.Anything, client.GetWarehouseQuery, readVariables1).Unset()
-		readResponse := []byte(fmt.Sprintf(`{"getWarehouse":{"name":"name2","connections":[{"uuid":"8cd5a",`+
-			`"type":"%s"}],"dataCollector":{"uuid":"dataCollector1"}}}`, client.BigQueryConnectionTypeResponse))
-		mcClient.On("ExecRaw", mock.Anything, client.GetWarehouseQuery, readVariables1).Return(readResponse, nil)
-	})
-	return &mcClient
 }
