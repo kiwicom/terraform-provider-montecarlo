@@ -13,9 +13,13 @@ provider "montecarlo" {
   }
 }
 
+variable "bq_service_account" {
+  type = string
+}
+
 resource "montecarlo_bigquery_warehouse" "test" {
   name                = "test-warehouse-updated"
   collector_uuid      = "a08d23fc-00a0-4c36-b568-82e9d0e67ad8"
-  service_account_key = file("testdata/TestAccBigQueryWarehouseResource/update-sa.json")
+  service_account_key = var.bq_service_account
   deletion_protection = false
 }

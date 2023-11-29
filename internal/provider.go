@@ -107,8 +107,8 @@ func (p *Provider) DataSources(ctx context.Context) []func() datasource.DataSour
 	}
 }
 
-func New(version string, context *common.ProviderContext) func() provider.Provider {
+func New(version string) func() provider.Provider {
 	return func() provider.Provider {
-		return &Provider{version: version, context: context}
+		return &Provider{version: version}
 	}
 }

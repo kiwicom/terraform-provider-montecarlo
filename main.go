@@ -23,7 +23,7 @@ var (
 func main() {
 	flag.Parse()
 	opts := providerserver.ServeOpts{Address: "registry.terraform.io/kiwicom/montecarlo", Debug: false}
-	if err := providerserver.Serve(context.Background(), internal.New(version, nil), opts); err != nil {
+	if err := providerserver.Serve(context.Background(), internal.New(version), opts); err != nil {
 		log.Fatal(err.Error())
 	}
 }

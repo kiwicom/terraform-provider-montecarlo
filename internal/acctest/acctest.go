@@ -15,7 +15,7 @@ import (
 // CLI command executed to create a provider server to which the CLI can
 // reattach.
 var TestAccProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
-	"montecarlo": providerserver.NewProtocol6WithError(internal.New("test", nil)()),
+	"montecarlo": providerserver.NewProtocol6WithError(internal.New("test")()),
 }
 
 func TestAccPreCheck(t *testing.T) {

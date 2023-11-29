@@ -17,13 +17,10 @@ func TestAccBigQueryWarehouseResource(t *testing.T) {
 	mc_api_key_token := os.Getenv("MC_API_KEY_TOKEN")
 
 	collectorUuid := "a08d23fc-00a0-4c36-b568-82e9d0e67ad8"
-	createSa, createSaErr := os.ReadFile("testdata/TestAccBigQueryWarehouseResource/create-sa.json")
-	updateSa, updateSaErr := os.ReadFile("testdata/TestAccBigQueryWarehouseResource/update-sa.json")
+	serviceAccount := os.Getenv("BQ_SERVICE_ACCOUNT")
 
-	if createSaErr != nil {
-		t.Fatalf("failed to read testdata/TestAccBigQueryWarehouseResource/create-sa.json: %v", createSaErr)
-	} else if updateSaErr != nil {
-		t.Fatalf("failed to read testdata/TestAccBigQueryWarehouseResource/update-sa.json: %v", updateSaErr)
+	if serviceAccount == "" {
+		t.Fatalf("'BQ_SERVICE_ACCOUNT' must be set for this acceptance tests")
 	}
 
 	resource.Test(t, resource.TestCase{
@@ -35,11 +32,12 @@ func TestAccBigQueryWarehouseResource(t *testing.T) {
 				ConfigVariables: config.Variables{
 					"montecarlo_api_key_id":    config.StringVariable(mc_api_key_id),
 					"montecarlo_api_key_token": config.StringVariable(mc_api_key_token),
+					"bq_service_account":       config.StringVariable(serviceAccount),
 				},
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "name", "test-warehouse"),
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "collector_uuid", collectorUuid),
-					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "service_account_key", string(createSa)),
+					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "service_account_key", serviceAccount),
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "deletion_protection", "false"),
 				),
 			},
@@ -48,6 +46,7 @@ func TestAccBigQueryWarehouseResource(t *testing.T) {
 				ConfigVariables: config.Variables{
 					"montecarlo_api_key_id":    config.StringVariable(mc_api_key_id),
 					"montecarlo_api_key_token": config.StringVariable(mc_api_key_token),
+					"bq_service_account":       config.StringVariable(serviceAccount),
 				},
 				ResourceName:      "montecarlo_bigquery_warehouse.test",
 				ImportState:       true,
@@ -66,11 +65,12 @@ func TestAccBigQueryWarehouseResource(t *testing.T) {
 				ConfigVariables: config.Variables{
 					"montecarlo_api_key_id":    config.StringVariable(mc_api_key_id),
 					"montecarlo_api_key_token": config.StringVariable(mc_api_key_token),
+					"bq_service_account":       config.StringVariable(serviceAccount),
 				},
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "name", "test-warehouse-updated"),
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "collector_uuid", collectorUuid),
-					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "service_account_key", string(updateSa)),
+					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "service_account_key", serviceAccount),
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "deletion_protection", "false"),
 				),
 			},

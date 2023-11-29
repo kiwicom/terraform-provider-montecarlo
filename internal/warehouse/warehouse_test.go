@@ -2,109 +2,49 @@ package warehouse_test
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
-	"github.com/kiwicom/terraform-provider-montecarlo/client"
-	cmock "github.com/kiwicom/terraform-provider-montecarlo/client/mock"
-	"github.com/kiwicom/terraform-provider-montecarlo/internal"
-	"github.com/kiwicom/terraform-provider-montecarlo/internal/common"
+	"github.com/kiwicom/terraform-provider-montecarlo/internal/acctest"
 
-	"github.com/stretchr/testify/mock"
-
-	"github.com/hashicorp/terraform-plugin-framework/providerserver"
-	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
+	"github.com/hashicorp/terraform-plugin-testing/config"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccWarehouseDataSource(t *testing.T) {
-	accountUuid := "a84380ed-b962-4bd3-b150-04bc38a209d5++e7c59fd6"
-	warehouseUuid := "427a1600-2653-40c5-a1e7-5ec98703ee9d"
-	project1 := "bi-prod"
-	project2 := "booking"
-	dataset1 := "raw"
-	dataset2 := "processed"
-	table1 := "events"
-	table2 := "pageHits"
-	assignment1 := fmt.Sprintf("MCON++a84380ed-b962-4bd3-b150-04bc38a209d5++427a1600-2653-40c5-a1e7-5ec98703ee9d++table++%s:%s.%s",
-		project1, dataset1, table1)
-	assignment2 := fmt.Sprintf("MCON++a84380ed-b962-4bd3-b150-04bc38a209d5++e7c59fd6-7ca8-41e7-8325-062ea38d3df5++table++%s:%s.%s",
-		project2, dataset2, table2)
-	providerContext := &common.ProviderContext{MonteCarloClient: initWarehouseMonteCarloClient(
-		warehouseUuid, accountUuid, assignment1, assignment2, project1, project2,
-		dataset1, dataset2, table1, table2,
-	)}
-	providerFactories := map[string]func() (tfprotov6.ProviderServer, error){
-		"montecarlo": providerserver.NewProtocol6WithError(internal.New("test", providerContext)()),
-	}
+	mc_api_key_id := os.Getenv("MC_API_KEY_ID")
+	mc_api_key_token := os.Getenv("MC_API_KEY_TOKEN")
+
+	project := "data-playground-8bb9fc23"
+	dataset := "terraform_provider_montecarlo"
+	personTable := "person"
+	deviceTable := "device"
+	accountUuid := "3e9abc75-5dc1-447e-b4cb-9d5a6fc5db5c"
+	warehouseUuid := "da6c0716-2724-4bfc-b5cc-7e0364faf979"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() {},
-		ProtoV6ProviderFactories: providerFactories,
+		PreCheck: func() { acctest.TestAccPreCheck(t) },
 		Steps: []resource.TestStep{
 			{ // Read testing
-				Config: warehouseConfig(warehouseUuid),
+				ProtoV6ProviderFactories: acctest.TestAccProviderFactories,
+				ConfigFile:               config.TestNameFile("read.tf"),
+				ConfigVariables: config.Variables{
+					"montecarlo_api_key_id":    config.StringVariable(mc_api_key_id),
+					"montecarlo_api_key_token": config.StringVariable(mc_api_key_token),
+				},
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.montecarlo_warehouse.test", "uuid", warehouseUuid),
-					resource.TestCheckResourceAttr("data.montecarlo_warehouse.test", "projects.%", "2"),
-					resource.TestCheckResourceAttr("data.montecarlo_warehouse.test", "projects."+project1+".mcon",
-						fmt.Sprintf("MCON++%s++%s++project++%s", accountUuid, warehouseUuid, project1)),
-					resource.TestCheckResourceAttr("data.montecarlo_warehouse.test", "projects."+project2+".mcon",
-						fmt.Sprintf("MCON++%s++%s++project++%s", accountUuid, warehouseUuid, project2)),
-					resource.TestCheckResourceAttr("data.montecarlo_warehouse.test", "projects."+project1+".datasets."+dataset1+".mcon",
-						fmt.Sprintf("MCON++%s++%s++dataset++%s:%s", accountUuid, warehouseUuid, project1, dataset1)),
-					resource.TestCheckResourceAttr("data.montecarlo_warehouse.test", "projects."+project2+".datasets."+dataset2+".mcon",
-						fmt.Sprintf("MCON++%s++%s++dataset++%s:%s", accountUuid, warehouseUuid, project2, dataset2)),
-					resource.TestCheckResourceAttr("data.montecarlo_warehouse.test", "projects."+project1+".datasets."+dataset1+".tables."+table1+".mcon", assignment1),
-					resource.TestCheckResourceAttr("data.montecarlo_warehouse.test", "projects."+project2+".datasets."+dataset2+".tables."+table2+".mcon", assignment2),
+					resource.TestCheckResourceAttr("data.montecarlo_warehouse.test", "uuid", "da6c0716-2724-4bfc-b5cc-7e0364faf979"),
+					resource.TestCheckResourceAttr("data.montecarlo_warehouse.test", "projects.%", "1"),
+					resource.TestCheckResourceAttr("data.montecarlo_warehouse.test", "projects."+project+".mcon",
+						fmt.Sprintf("MCON++%s++%s++project++%s", accountUuid, warehouseUuid, project)),
+					resource.TestCheckResourceAttr("data.montecarlo_warehouse.test", "projects."+project+".datasets."+dataset+".mcon",
+						fmt.Sprintf("MCON++%s++%s++dataset++%s:%s", accountUuid, warehouseUuid, project, dataset)),
+					resource.TestCheckResourceAttr("data.montecarlo_warehouse.test", "projects."+project+".datasets."+dataset+".tables."+personTable+".mcon",
+						fmt.Sprintf("MCON++%s++%s++table++%s:%s.%s", accountUuid, warehouseUuid, project, dataset, personTable)),
+					resource.TestCheckResourceAttr("data.montecarlo_warehouse.test", "projects."+project+".datasets."+dataset+".tables."+deviceTable+".mcon",
+						fmt.Sprintf("MCON++%s++%s++table++%s:%s.%s", accountUuid, warehouseUuid, project, dataset, deviceTable)),
 				),
 			},
 		},
 	})
-}
-
-func warehouseConfig(uuid string) string {
-	return fmt.Sprintf(`
-provider "montecarlo" {
-  account_service_key = {
-    id    = "montecarlo"
-  	token = "montecarlo"
-  }
-}
-
-data "montecarlo_warehouse" "test" {
-  uuid = %[1]q
-}
-`, uuid)
-}
-
-func initWarehouseMonteCarloClient(
-	warehouseUuid, accountUuid, assignment1, assignment2,
-	project1, project2, dataset1, dataset2, table1, table2 string) client.MonteCarloClient {
-	mcClient := cmock.MonteCarloClient{}
-	mcClient.On("Query", mock.Anything, mock.AnythingOfType("*client.GetTables"), mock.MatchedBy(func(in map[string]interface{}) bool {
-		return in["dwId"] == client.UUID(warehouseUuid) &&
-			in["isDeleted"] == false && in["isExcluded"] == false
-	})).Return(nil).Run(func(args mock.Arguments) {
-		arg := args.Get(1).(*client.GetTables)
-		arg.GetTables.PageInfo.HasNextPage = false
-
-		edge1 := client.GetTablesEdge{}
-		edge1.Node.Mcon = assignment1
-		edge1.Node.ProjectName = project1
-		edge1.Node.Dataset = dataset1
-		edge1.Node.TableId = table1
-		edge1.Node.Warehouse.Uuid = warehouseUuid
-		edge1.Node.Warehouse.Account.Uuid = accountUuid
-
-		edge2 := client.GetTablesEdge{}
-		edge2.Node.Mcon = assignment2
-		edge2.Node.ProjectName = project2
-		edge2.Node.Dataset = dataset2
-		edge2.Node.TableId = table2
-		edge2.Node.Warehouse.Uuid = warehouseUuid
-		edge2.Node.Warehouse.Account.Uuid = accountUuid
-
-		arg.GetTables.Edges = append(arg.GetTables.Edges, edge1, edge2)
-	})
-	return &mcClient
 }

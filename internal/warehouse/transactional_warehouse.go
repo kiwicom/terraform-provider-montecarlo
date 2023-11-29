@@ -256,7 +256,7 @@ func (r *TransactionalWarehouseResource) Update(ctx context.Context, req resourc
 
 	variables = map[string]interface{}{
 		"changes": client.JSONString(fmt.Sprintf(
-			`{"db_type":"%s", "host": "%s", "port": %d, "user": "%s", "password": "%s"}`,
+			`{"db_type":"%s", "host": "%s", "port": "%d", "user": "%s", "password": "%s"}`,
 			dbType, host, port, username, password)),
 		"connectionId":   client.UUID(data.ConnectionUuid.ValueString()),
 		"shouldReplace":  true,
