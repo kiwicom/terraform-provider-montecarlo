@@ -1,4 +1,4 @@
-package resources
+package authorization
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/client"
-	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/common"
+	"github.com/kiwicom/terraform-provider-montecarlo/client"
+	"github.com/kiwicom/terraform-provider-montecarlo/internal/common"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -122,7 +122,7 @@ func (r *IamMemberResource) Create(ctx context.Context, req resource.CreateReque
 	var group *client.AuthorizationGroup
 	groupName := strings.Split(data.Group.ValueString(), "groups/")[1]
 	if index := slices.IndexFunc(getGroupResult.GetAuthorizationGroups, func(group client.AuthorizationGroup) bool {
-		return group.SsoGroup == nil && group.Name == groupName
+		return (group.SsoGroup == nil || *group.SsoGroup == "") && group.Name == groupName
 	}); index >= 0 {
 		group = &getGroupResult.GetAuthorizationGroups[index]
 	} else {
@@ -187,7 +187,7 @@ func (r *IamMemberResource) Read(ctx context.Context, req resource.ReadRequest, 
 	var group *client.AuthorizationGroup
 	groupName := strings.Split(data.Group.ValueString(), "groups/")[1]
 	if index := slices.IndexFunc(getGroupResult.GetAuthorizationGroups, func(group client.AuthorizationGroup) bool {
-		return group.SsoGroup == nil && group.Name == groupName
+		return (group.SsoGroup == nil || *group.SsoGroup == "") && group.Name == groupName
 	}); index >= 0 {
 		group = &getGroupResult.GetAuthorizationGroups[index]
 	} else {

@@ -1,4 +1,4 @@
-package resources
+package warehouse
 
 import (
 	"context"
@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/client"
-	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/common"
+	"github.com/kiwicom/terraform-provider-montecarlo/client"
+	"github.com/kiwicom/terraform-provider-montecarlo/internal/common"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -256,7 +256,7 @@ func (r *TransactionalWarehouseResource) Update(ctx context.Context, req resourc
 
 	variables = map[string]interface{}{
 		"changes": client.JSONString(fmt.Sprintf(
-			`{"db_type":"%s", "host": "%s", "port": %d, "user": "%s", "password": "%s"}`,
+			`{"db_type":"%s", "host": "%s", "port": "%d", "user": "%s", "password": "%s"}`,
 			dbType, host, port, username, password)),
 		"connectionId":   client.UUID(data.ConnectionUuid.ValueString()),
 		"shouldReplace":  true,

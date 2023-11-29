@@ -1,11 +1,11 @@
-package resources
+package authorization
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/client"
-	"github.com/kiwicom/terraform-provider-montecarlo/monte_carlo/common"
+	"github.com/kiwicom/terraform-provider-montecarlo/client"
+	"github.com/kiwicom/terraform-provider-montecarlo/internal/common"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -120,7 +120,7 @@ func (r *IamGroupResource) Create(ctx context.Context, req resource.CreateReques
 		"label":                data.Name.ValueString(),
 		"description":          data.Description.ValueString(),
 		"roles":                []string{data.Role.ValueString()},
-		"domainRestrictionIds": normalize[client.UUID](data.Domains),
+		"domainRestrictionIds": common.TfStringsTo[client.UUID](data.Domains),
 		"ssoGroup":             data.SsoGroup.ValueStringPointer(),
 	}
 
@@ -164,8 +164,8 @@ func (r *IamGroupResource) Read(ctx context.Context, req resource.ReadRequest, r
 	} else {
 		data.Label = types.StringValue(found.Label)
 		data.Description = types.StringValue(found.Description)
-		data.Role = denormalize(rolesToNames(found.Roles))[0]
-		data.Domains = denormalize(domainsToUuids[string](found.DomainRestrictions))
+		data.Role = common.TfStringsFrom(rolesToNames(found.Roles))[0]
+		data.Domains = common.TfStringsFrom(domainsToUuids[string](found.DomainRestrictions))
 		data.SsoGroup = types.StringPointerValue(found.SsoGroup)
 		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 	}
@@ -184,7 +184,7 @@ func (r *IamGroupResource) Update(ctx context.Context, req resource.UpdateReques
 		"label":                data.Name.ValueString(),
 		"description":          data.Description.ValueString(),
 		"roles":                []string{data.Role.ValueString()},
-		"domainRestrictionIds": normalize[client.UUID](data.Domains),
+		"domainRestrictionIds": common.TfStringsTo[client.UUID](data.Domains),
 		"ssoGroup":             data.SsoGroup.ValueStringPointer(),
 	}
 

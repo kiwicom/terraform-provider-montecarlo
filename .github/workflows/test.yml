@@ -28,6 +28,14 @@ jobs:
           go test -v ./... -coverprofile=coverage.out
         env:
           TF_ACC: '1'
+          MC_API_KEY_ID: ${{ secrets.ACC_TEST_MC_API_KEY_ID }}
+          MC_API_KEY_TOKEN: ${{ secrets.ACC_TEST_MC_API_KEY_TOKEN }}
+          BQ_SERVICE_ACCOUNT: ${{ secrets.ACC_TEST_BQ_SERVICE_ACCOUNT }}
+          PG_HOST: ${{ secrets.ACC_TEST_PG_HOST }}
+          PG_PORT: ${{ secrets.ACC_TEST_PG_PORT }}
+          PG_DATABASE: ${{ secrets.ACC_TEST_PG_DATABASE }}
+          PG_USER: ${{ secrets.ACC_TEST_PG_USER }}
+          PG_PASSWORD: ${{ secrets.ACC_TEST_PG_PASSWORD }}
       - uses: actions/upload-artifact@v3
         with:
           name: coverage
