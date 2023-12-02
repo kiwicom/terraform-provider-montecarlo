@@ -283,3 +283,23 @@ type UpdateUserAuthorizationGroupMembership struct {
 		}
 	} `graphql:"updateUserAuthorizationGroupMembership(memberUserId: $memberUserId, groupNames: $groupNames)"`
 }
+
+type CreateOrUpdateMonteCarloConfigTemplate struct {
+	CreateOrUpdateMonteCarloConfigTemplate struct {
+		Response struct {
+			ChangesApplied        bool
+			ErrorsAsJson          string
+			InfoAsJson            string
+			ResourceModifications []struct {
+				Type                string
+				Description         string
+				ResourceAsJson      string
+				IsSignificantChange bool
+				DiffString          string
+				ResourceType        string
+				ResourceIndex       int
+			}
+			WarningsAsJson string
+		}
+	} `graphql:"createOrUpdateMonteCarloConfigTemplate(configTemplateJson: $configTemplateJson, dryRun: $dryRun, namespace: $namespace, resource: $resource)"`
+}
