@@ -106,6 +106,8 @@ github.com/hashicorp/yamux v0.1.1 h1:yrQxtgseBDrq9Y652vSRDvsKCJKOUD+GzTS4Y0Y8pvE
 github.com/hashicorp/yamux v0.1.1/go.mod h1:CtWFDAQgb7dxtzFs4tWbplKIe2jSi3+5vKbgIO0SLnQ=
 github.com/hasura/go-graphql-client v0.10.0 h1:eQm/ap/rqxMG6yAGe6J+FkXu1VqJ9p21E63vz0A7zLQ=
 github.com/hasura/go-graphql-client v0.10.0/go.mod h1:z9UPkMmCBMuJjvBEtdE6F+oTR2r15AcjirVNq/8P+Ig=
+github.com/hasura/go-graphql-client v0.10.1 h1:9lY5mFfKRIjkPJ/EUq41mWYJZpTdAVjs24nibWoGyDo=
+github.com/hasura/go-graphql-client v0.10.1/go.mod h1:z9UPkMmCBMuJjvBEtdE6F+oTR2r15AcjirVNq/8P+Ig=
 github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 h1:BQSFePA1RWJOlocH6Fxy8MmwDt+yVQYULKfN0RoTN8A=
 github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99/go.mod h1:1lJo3i6rXxKeerYnT8Nvf0QmHCRC1n8sfWVwXF2Frvo=
 github.com/jhump/protoreflect v1.15.1 h1:HUMERORf3I3ZdX05WaQ6MIpd/NJ434hTp5YiKgfCL6c=
