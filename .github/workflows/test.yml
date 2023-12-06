@@ -5,39 +5,31 @@ on:
       branches:
         - master
   workflow_call:
-    inputs:
-      mc_api_key_id:
+    secrets:
+      ACC_TEST_MC_API_KEY_ID:
         description: 'Monte Carlo API Key ID'
         required: true
-        type: string
-      mc_api_key_token:
+      ACC_TEST_MC_API_KEY_TOKEN:
         description: 'Monte Carlo API Key Token'
         required: true
-        type: string
-      bq_service_account:
+      ACC_TEST_BQ_SERVICE_ACCOUNT:
         description: 'BigQuery Service Account'
         required: true
-        type: string
-      pg_host:
+      ACC_TEST_PG_HOST:
         description: 'Postgres Host'
         required: true
-        type: string
-      pg_port:
+      ACC_TEST_PG_PORT:
         description: 'Postgres Port'
         required: true
-        type: string
-      pg_database:
+      ACC_TEST_PG_DATABASE:
         description: 'Postgres Database'
         required: true
-        type: string
-      pg_user:
+      ACC_TEST_PG_USER:
         description: 'Postgres User'
         required: true
-        type: string
-      pg_password:
+      ACC_TEST_PG_PASSWORD:
         description: 'Postgres Password'
         required: true
-        type: string
 
 permissions:
   # Permission for checking out code
@@ -61,14 +53,14 @@ jobs:
           go test -v ./... -coverprofile=coverage.out
         env:
           TF_ACC: '1'
-          MC_API_KEY_ID: ${{ inputs.mc_api_key_id || secrets.ACC_TEST_MC_API_KEY_ID }}
-          MC_API_KEY_TOKEN: ${{ inputs.mc_api_key_token || secrets.ACC_TEST_MC_API_KEY_TOKEN }}
-          BQ_SERVICE_ACCOUNT: ${{ inputs.bq_service_account || secrets.ACC_TEST_BQ_SERVICE_ACCOUNT }}
-          PG_HOST: ${{ inputs.pg_host || secrets.ACC_TEST_PG_HOST }}
-          PG_PORT: ${{ inputs.pg_port || secrets.ACC_TEST_PG_PORT }}
-          PG_DATABASE: ${{ inputs.pg_database || secrets.ACC_TEST_PG_DATABASE }}
-          PG_USER: ${{ inputs.pg_user || secrets.ACC_TEST_PG_USER }}
-          PG_PASSWORD: ${{ inputs.pg_password || secrets.ACC_TEST_PG_PASSWORD }}
+          MC_API_KEY_ID: ${{ secrets.ACC_TEST_MC_API_KEY_ID }}
+          MC_API_KEY_TOKEN: ${{ secrets.ACC_TEST_MC_API_KEY_TOKEN }}
+          BQ_SERVICE_ACCOUNT: ${{ secrets.ACC_TEST_BQ_SERVICE_ACCOUNT }}
+          PG_HOST: ${{ secrets.ACC_TEST_PG_HOST }}
+          PG_PORT: ${{ secrets.ACC_TEST_PG_PORT }}
+          PG_DATABASE: ${{ secrets.ACC_TEST_PG_DATABASE }}
+          PG_USER: ${{ secrets.ACC_TEST_PG_USER }}
+          PG_PASSWORD: ${{ secrets.ACC_TEST_PG_PASSWORD }}
       - uses: actions/upload-artifact@v3
         with:
           name: coverage
