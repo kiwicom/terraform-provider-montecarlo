@@ -18,14 +18,14 @@ jobs:
   tests:
     uses: ./.github/workflows/test.yml
     secrets:
-      mc_api_key_id: ${{ secrets.ACC_TEST_MC_API_KEY_ID }}
-      mc_api_key_token: ${{ secrets.ACC_TEST_MC_API_KEY_TOKEN }}
-      bq_service_account: ${{ secrets.ACC_TEST_BQ_SERVICE_ACCOUNT }}
-      pg_host: ${{ secrets.ACC_TEST_PG_HOST }}
-      pg_port: ${{ secrets.ACC_TEST_PG_PORT }}
-      pg_database: ${{ secrets.ACC_TEST_PG_DATABASE }}
-      pg_user: ${{ secrets.ACC_TEST_PG_USER }}
-      pg_password: ${{ secrets.ACC_TEST_PG_PASSWORD }}
+      ACC_TEST_MC_API_KEY_ID: ${{ secrets.ACC_TEST_MC_API_KEY_ID }}
+      ACC_TEST_MC_API_KEY_TOKEN: ${{ secrets.ACC_TEST_MC_API_KEY_TOKEN }}
+      ACC_TEST_BQ_SERVICE_ACCOUNT: ${{ secrets.ACC_TEST_BQ_SERVICE_ACCOUNT }}
+      ACC_TEST_PG_HOST: ${{ secrets.ACC_TEST_PG_HOST }}
+      ACC_TEST_PG_PORT: ${{ secrets.ACC_TEST_PG_PORT }}
+      ACC_TEST_PG_DATABASE: ${{ secrets.ACC_TEST_PG_DATABASE }}
+      ACC_TEST_PG_USER: ${{ secrets.ACC_TEST_PG_USER }}
+      ACC_TEST_PG_PASSWORD: ${{ secrets.ACC_TEST_PG_PASSWORD }}
   coverage-check:
     needs: tests
     runs-on: ubuntu-latest
