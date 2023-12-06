@@ -1,10 +1,35 @@
 name: Terraform Provider Tests
 
 on:
-  workflow_call:
   pull_request:
       branches:
         - master
+  workflow_call:
+    secrets:
+      ACC_TEST_MC_API_KEY_ID:
+        description: 'Monte Carlo API Key ID'
+        required: true
+      ACC_TEST_MC_API_KEY_TOKEN:
+        description: 'Monte Carlo API Key Token'
+        required: true
+      ACC_TEST_BQ_SERVICE_ACCOUNT:
+        description: 'BigQuery Service Account'
+        required: true
+      ACC_TEST_PG_HOST:
+        description: 'Postgres Host'
+        required: true
+      ACC_TEST_PG_PORT:
+        description: 'Postgres Port'
+        required: true
+      ACC_TEST_PG_DATABASE:
+        description: 'Postgres Database'
+        required: true
+      ACC_TEST_PG_USER:
+        description: 'Postgres User'
+        required: true
+      ACC_TEST_PG_PASSWORD:
+        description: 'Postgres Password'
+        required: true
 
 permissions:
   # Permission for checking out code

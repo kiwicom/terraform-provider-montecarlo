@@ -17,6 +17,15 @@ permissions:
 jobs:
   tests:
     uses: ./.github/workflows/test.yml
+    secrets:
+      ACC_TEST_MC_API_KEY_ID: ${{ secrets.ACC_TEST_MC_API_KEY_ID }}
+      ACC_TEST_MC_API_KEY_TOKEN: ${{ secrets.ACC_TEST_MC_API_KEY_TOKEN }}
+      ACC_TEST_BQ_SERVICE_ACCOUNT: ${{ secrets.ACC_TEST_BQ_SERVICE_ACCOUNT }}
+      ACC_TEST_PG_HOST: ${{ secrets.ACC_TEST_PG_HOST }}
+      ACC_TEST_PG_PORT: ${{ secrets.ACC_TEST_PG_PORT }}
+      ACC_TEST_PG_DATABASE: ${{ secrets.ACC_TEST_PG_DATABASE }}
+      ACC_TEST_PG_USER: ${{ secrets.ACC_TEST_PG_USER }}
+      ACC_TEST_PG_PASSWORD: ${{ secrets.ACC_TEST_PG_PASSWORD }}
   coverage-check:
     needs: tests
     runs-on: ubuntu-latest
