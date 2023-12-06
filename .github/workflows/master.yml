@@ -17,7 +17,7 @@ permissions:
 jobs:
   tests:
     uses: ./.github/workflows/test.yml
-    with:
+    secrets:
       mc_api_key_id: ${{ secrets.ACC_TEST_MC_API_KEY_ID }}
       mc_api_key_token: ${{ secrets.ACC_TEST_MC_API_KEY_TOKEN }}
       bq_service_account: ${{ secrets.ACC_TEST_BQ_SERVICE_ACCOUNT }}
