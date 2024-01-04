@@ -61,7 +61,7 @@ jobs:
           PG_DATABASE: ${{ secrets.ACC_TEST_PG_DATABASE }}
           PG_USER: ${{ secrets.ACC_TEST_PG_USER }}
           PG_PASSWORD: ${{ secrets.ACC_TEST_PG_PASSWORD }}
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: coverage
           path: ./coverage.out
