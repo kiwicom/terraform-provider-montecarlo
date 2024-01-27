@@ -283,3 +283,32 @@ type UpdateUserAuthorizationGroupMembership struct {
 		}
 	} `graphql:"updateUserAuthorizationGroupMembership(memberUserId: $memberUserId, groupNames: $groupNames)"`
 }
+
+type CreateOrUpdateComparisonRule struct {
+	CreateOrUpdateComparisonRule struct {
+		CustomRule struct {
+			Uuid              string
+			AccountUuid       string
+			Projects          []string
+			Datasets          []string
+			Description       string
+			Notes             string
+			Labels            []string
+			IsTemplateManaged bool
+			Namespace         string
+			Severity          string
+			RuleType          string
+			WarehouseUuid     string
+			Comparisons []struct {
+				ComparisonType string
+				FullTableId    string
+				FullTableIds   []string
+				Field          string
+				Metric         string
+				Operator       string
+				Threshold      float64
+
+			}
+		}
+	} `graphql:"createOrUpdateComparisonRule(comparisons: $comparisons, customRuleUuid: $customRuleUuid, description: $description, queryResultType: $queryResultType, scheduleConfig: $scheduleConfig, sourceConnectionId: $sourceConnectionId, sourceDwId: $sourceDwId, sourceSqlQuery: $sourceSqlQuery, targetConnectionId: $targetConnectionId, targetDwId: $targetDwId, targetSqlQuery: $targetSqlQuery)"`
+}
