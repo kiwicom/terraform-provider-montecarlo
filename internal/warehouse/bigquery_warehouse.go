@@ -39,6 +39,20 @@ type BigQueryWarehouseResource struct {
 // BigQueryWarehouseResourceModel describes the resource data model according to its Schema.
 type BigQueryWarehouseResourceModel struct {
 	Uuid               types.String `tfsdk:"uuid"`
+	Connection         Connection   `tfsdk:"connection"`
+	Name               types.String `tfsdk:"name"`
+	CollectorUuid      types.String `tfsdk:"collector_uuid"`
+	DeletionProtection types.Bool   `tfsdk:"deletion_protection"`
+}
+
+type Connection struct {
+	ConnectionUuid    types.String `tfsdk:"connection_uuid"`
+	ServiceAccountKey types.String `tfsdk:"service_account_key"`
+	UpdatedAt         types.String `tfsdk:"updated_at"`
+}
+
+type BigQueryWarehouseResourceModelV1 struct {
+	Uuid               types.String `tfsdk:"uuid"`
 	ConnectionUuid     types.String `tfsdk:"connection_uuid"`
 	Name               types.String `tfsdk:"name"`
 	CollectorUuid      types.String `tfsdk:"collector_uuid"`
@@ -70,11 +84,27 @@ func (r *BigQueryWarehouseResource) Schema(ctx context.Context, req resource.Sch
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"connection_uuid": schema.StringAttribute{
-				Computed: true,
-				Optional: false,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
+			"connection": schema.SingleNestedAttribute{
+				Required: true,
+				Attributes: map[string]schema.Attribute{
+					"connection_uuid": schema.StringAttribute{
+						Computed: true,
+						Optional: false,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
+						},
+					},
+					"service_account_key": schema.StringAttribute{
+						Required:  true,
+						Sensitive: true,
+					},
+					"updated_at": schema.StringAttribute{
+						Computed: true,
+						Optional: false,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
+						},
+					},
 				},
 			},
 			"name": schema.StringAttribute{
@@ -86,10 +116,6 @@ func (r *BigQueryWarehouseResource) Schema(ctx context.Context, req resource.Sch
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplaceIfConfigured(),
 				},
-			},
-			"service_account_key": schema.StringAttribute{
-				Required:  true,
-				Sensitive: true,
 			},
 			"deletion_protection": schema.BoolAttribute{
 				Optional: true,
@@ -120,8 +146,8 @@ func (r *BigQueryWarehouseResource) Create(ctx context.Context, req resource.Cre
 	}
 
 	data.Uuid = result.Uuid
-	data.ConnectionUuid = result.ConnectionUuid
-	data.Name = result.Name
+	data.Connection.UpdatedAt = result.Connection.UpdatedAt
+	data.Connection.ConnectionUuid = result.Connection.ConnectionUuid
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -167,9 +193,11 @@ func (r *BigQueryWarehouseResource) Read(ctx context.Context, req resource.ReadR
 	}
 
 	readConnectionUuid := types.StringNull()
-	readServiceAccountKey := types.StringNull()
+	readConnectionSAKey := types.StringNull()
+	readConnectionUpdatedAt := types.StringNull()
+
 	for _, connection := range getResult.GetWarehouse.Connections {
-		if connection.Uuid == data.ConnectionUuid.ValueString() {
+		if connection.Uuid == data.Connection.ConnectionUuid.ValueString() {
 			if connection.Type != client.BigQueryConnectionTypeResponse {
 				resp.Diagnostics.AddError(
 					fmt.Sprintf("Obtained Warehouse [uuid: %s, connection_uuid: %s] but got unexpected connection "+
@@ -177,13 +205,19 @@ func (r *BigQueryWarehouseResource) Read(ctx context.Context, req resource.ReadR
 					"Users can manually fix remote state or delete this resource from the Terraform configuration.")
 				return
 			}
-			readConnectionUuid = data.ConnectionUuid
-			readServiceAccountKey = data.ServiceAccountKey
+
+			readConnectionUuid = data.Connection.ConnectionUuid
+			readConnectionSAKey = data.Connection.ServiceAccountKey
+			readConnectionUpdatedAt = types.StringValue(connection.UpdatedOn)
+			if readConnectionUpdatedAt.IsNull() || readConnectionUpdatedAt.IsUnknown() {
+				readConnectionUpdatedAt = types.StringValue(connection.CreatedOn)
+			}
 		}
 	}
 
-	data.ConnectionUuid = readConnectionUuid
-	data.ServiceAccountKey = readServiceAccountKey
+	data.Connection.UpdatedAt = readConnectionUpdatedAt
+	data.Connection.ConnectionUuid = readConnectionUuid
+	data.Connection.ServiceAccountKey = readConnectionSAKey
 	data.Name = types.StringValue(getResult.GetWarehouse.Name)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -207,10 +241,11 @@ func (r *BigQueryWarehouseResource) Update(ctx context.Context, req resource.Upd
 		return
 	}
 
-	if data.ConnectionUuid.IsUnknown() || data.ConnectionUuid.IsNull() {
+	if data.Connection.ConnectionUuid.IsUnknown() || data.Connection.ConnectionUuid.IsNull() {
 		if result, diags := r.addConnection(ctx, data); result != nil {
 			resp.Diagnostics.Append(diags...)
-			data.ConnectionUuid = result.ConnectionUuid
+			data.Connection.UpdatedAt = result.Connection.UpdatedAt
+			data.Connection.ConnectionUuid = result.Connection.ConnectionUuid
 		} else {
 			resp.Diagnostics.Append(diags...)
 			return
@@ -219,8 +254,8 @@ func (r *BigQueryWarehouseResource) Update(ctx context.Context, req resource.Upd
 
 	updateResult := client.UpdateCredentials{}
 	variables = map[string]interface{}{
-		"changes":        client.JSONString(data.ServiceAccountKey.ValueString()),
-		"connectionId":   client.UUID(data.ConnectionUuid.ValueString()),
+		"changes":        client.JSONString(data.Connection.ServiceAccountKey.ValueString()),
+		"connectionId":   client.UUID(data.Connection.ConnectionUuid.ValueString()),
 		"shouldReplace":  true,
 		"shouldValidate": true,
 	}
@@ -256,7 +291,7 @@ func (r *BigQueryWarehouseResource) Delete(ctx context.Context, req resource.Del
 	}
 
 	removeResult := client.RemoveConnection{}
-	variables := map[string]interface{}{"connectionId": client.UUID(data.ConnectionUuid.ValueString())}
+	variables := map[string]interface{}{"connectionId": client.UUID(data.Connection.ConnectionUuid.ValueString())}
 	if err := r.client.Mutate(ctx, &removeResult, variables); err != nil {
 		toPrint := fmt.Sprintf("MC client 'RemoveConnection' mutation result - %s", err.Error())
 		resp.Diagnostics.AddError(toPrint, "")
@@ -289,7 +324,7 @@ func (r *BigQueryWarehouseResource) addConnection(ctx context.Context, data BigQ
 		"validationName": "save_credentials",
 		"connectionDetails": BqConnectionDetails{
 			"serviceJson": b64.StdEncoding.EncodeToString(
-				[]byte(data.ServiceAccountKey.ValueString()),
+				[]byte(data.Connection.ServiceAccountKey.ValueString()),
 			),
 		},
 	}
@@ -334,8 +369,8 @@ func (r *BigQueryWarehouseResource) addConnection(ctx context.Context, data BigQ
 	}
 
 	data.Uuid = types.StringValue(addResult.AddConnection.Connection.Warehouse.Uuid)
-	data.ConnectionUuid = types.StringValue(addResult.AddConnection.Connection.Uuid)
-	data.Name = types.StringValue(addResult.AddConnection.Connection.Warehouse.Name)
+	data.Connection.UpdatedAt = types.StringValue(addResult.AddConnection.Connection.CreatedOn)
+	data.Connection.ConnectionUuid = types.StringValue(addResult.AddConnection.Connection.Uuid)
 	return &data, diagsResult
 }
 
@@ -398,13 +433,69 @@ func (r *BigQueryWarehouseResource) UpgradeState(ctx context.Context) map[int64]
 				var priorStateData BigQueryWarehouseResourceModelV0
 				resp.Diagnostics.Append(req.State.Get(ctx, &priorStateData)...)
 				if !resp.Diagnostics.HasError() {
-					upgradedStateData := BigQueryWarehouseResourceModel{
+					upgradedStateData := BigQueryWarehouseResourceModelV1{
 						Uuid:               priorStateData.Uuid,
 						ConnectionUuid:     priorStateData.ConnectionUuid,
 						CollectorUuid:      priorStateData.DataCollectorUuid,
 						Name:               priorStateData.Name,
 						ServiceAccountKey:  priorStateData.ServiceAccountKey,
 						DeletionProtection: priorStateData.DeletionProtection,
+					}
+					resp.Diagnostics.Append(resp.State.Set(ctx, upgradedStateData)...)
+				}
+			},
+		},
+		1: {
+			PriorSchema: &schema.Schema{
+				Attributes: map[string]schema.Attribute{
+					"uuid": schema.StringAttribute{
+						Computed: true,
+						Optional: false,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
+						},
+					},
+					"connection_uuid": schema.StringAttribute{
+						Computed: true,
+						Optional: false,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
+						},
+					},
+					"name": schema.StringAttribute{
+						Required:   true,
+						Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
+					},
+					"collector_uuid": schema.StringAttribute{
+						Required: true,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplaceIfConfigured(),
+						},
+					},
+					"service_account_key": schema.StringAttribute{
+						Required:  true,
+						Sensitive: true,
+					},
+					"deletion_protection": schema.BoolAttribute{
+						Optional: true,
+						Computed: true,
+						Default:  booldefault.StaticBool(true),
+					},
+				},
+			},
+			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+				var priorStateData BigQueryWarehouseResourceModelV1
+				resp.Diagnostics.Append(req.State.Get(ctx, &priorStateData)...)
+				if !resp.Diagnostics.HasError() {
+					upgradedStateData := BigQueryWarehouseResourceModel{
+						Uuid:               priorStateData.Uuid,
+						CollectorUuid:      priorStateData.CollectorUuid,
+						Name:               priorStateData.Name,
+						DeletionProtection: priorStateData.DeletionProtection,
+						Connection: Connection{
+							ConnectionUuid:    priorStateData.ConnectionUuid,
+							ServiceAccountKey: priorStateData.ServiceAccountKey,
+						},
 					}
 					resp.Diagnostics.Append(resp.State.Set(ctx, upgradedStateData)...)
 				}

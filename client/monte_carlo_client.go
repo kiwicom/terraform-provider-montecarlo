@@ -83,6 +83,8 @@ type AddConnection struct {
 	AddConnection struct {
 		Connection struct {
 			Uuid      string
+			CreatedOn string
+			UpdatedOn string
 			Warehouse struct {
 				Name string
 				Uuid string
@@ -95,8 +97,10 @@ type GetWarehouse struct {
 	GetWarehouse *struct {
 		Name        string `json:"name"`
 		Connections []struct {
-			Uuid string `json:"uuid"`
-			Type string `json:"type"`
+			Uuid      string `json:"uuid"`
+			Type      string `json:"type"`
+			CreatedOn string `json:"createdOn"`
+			UpdatedOn string `json:"updatedOn"`
 		} `json:"connections"`
 		DataCollector struct {
 			Uuid string `json:"uuid"`
@@ -299,7 +303,7 @@ type CreateOrUpdateComparisonRule struct {
 			Severity          string
 			RuleType          string
 			WarehouseUuid     string
-			Comparisons []struct {
+			Comparisons       []struct {
 				ComparisonType string
 				FullTableId    string
 				FullTableIds   []string
@@ -307,7 +311,6 @@ type CreateOrUpdateComparisonRule struct {
 				Metric         string
 				Operator       string
 				Threshold      float64
-
 			}
 		}
 	} `graphql:"createOrUpdateComparisonRule(comparisons: $comparisons, customRuleUuid: $customRuleUuid, description: $description, queryResultType: $queryResultType, scheduleConfig: $scheduleConfig, sourceConnectionId: $sourceConnectionId, sourceDwId: $sourceDwId, sourceSqlQuery: $sourceSqlQuery, targetConnectionId: $targetConnectionId, targetDwId: $targetDwId, targetSqlQuery: $targetSqlQuery)"`
