@@ -1,6 +1,6 @@
 module github.com/kiwicom/terraform-provider-montecarlo
 
-go 1.21.5
+go 1.22.0
 
 require (
 	github.com/hashicorp/terraform-plugin-framework v1.4.2
