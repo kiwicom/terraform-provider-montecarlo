@@ -56,11 +56,11 @@ func TestAccTransactionalWarehouseResource(t *testing.T) {
 					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "name", "name1"),
 					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "collector_uuid", collectorUuid),
 					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "deletion_protection", "false"),
-					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "configuration.host", pgHost),
-					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "configuration.port", pgPortRaw),
-					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "configuration.database", pgDatabase),
-					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "configuration.username", pgUser),
-					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "configuration.password", pgPassword),
+					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "credentials.host", pgHost),
+					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "credentials.port", pgPortRaw),
+					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "credentials.database", pgDatabase),
+					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "credentials.username", pgUser),
+					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "credentials.password", pgPassword),
 				),
 			},
 			{ // ImportState testing
@@ -79,11 +79,11 @@ func TestAccTransactionalWarehouseResource(t *testing.T) {
 				ImportStateVerify: true,
 				ImportStateIdFunc: func(s *terraform.State) (string, error) {
 					uuid := s.RootModule().Resources["montecarlo_transactional_warehouse.test"].Primary.Attributes["uuid"]
-					connectionUuid := s.RootModule().Resources["montecarlo_transactional_warehouse.test"].Primary.Attributes["connection_uuid"]
+					connectionUuid := s.RootModule().Resources["montecarlo_transactional_warehouse.test"].Primary.Attributes["credentials.connection_uuid"]
 					return fmt.Sprintf("%[1]s,%[2]s,%[3]s", uuid, connectionUuid, collectorUuid), nil
 				},
 				ImportStateVerifyIdentifierAttribute: "uuid",
-				ImportStateVerifyIgnore:              []string{"db_type", "deletion_protection", "configuration"},
+				ImportStateVerifyIgnore:              []string{"db_type", "deletion_protection", "credentials"},
 			},
 			{ // Update and Read testing
 				ProtoV6ProviderFactories: acctest.TestAccProviderFactories,
@@ -101,11 +101,11 @@ func TestAccTransactionalWarehouseResource(t *testing.T) {
 					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "name", "name1"),
 					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "collector_uuid", collectorUuid),
 					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "deletion_protection", "false"),
-					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "configuration.host", pgHost),
-					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "configuration.port", pgPortRaw),
-					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "configuration.database", pgDatabase),
-					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "configuration.username", pgUser),
-					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "configuration.password", pgPassword),
+					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "credentials.host", pgHost),
+					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "credentials.port", pgPortRaw),
+					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "credentials.database", pgDatabase),
+					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "credentials.username", pgUser),
+					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "credentials.password", pgPassword),
 				),
 			},
 		},

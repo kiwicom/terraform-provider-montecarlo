@@ -39,7 +39,7 @@ resource "montecarlo_transactional_warehouse" "test" {
   db_type             = "POSTGRES" # POSTGRES | MYSQL | SQL-SERVER
   deletion_protection = false
 
-  configuration = {
+  credentials = {
     host     = var.pg_host
     port     = var.pg_port
     database = var.pg_database

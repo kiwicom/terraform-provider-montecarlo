@@ -36,16 +36,35 @@ type TransactionalWarehouseResource struct {
 
 // TransactionalWarehouseResourceModel describes the resource data model according to its Schema.
 type TransactionalWarehouseResourceModel struct {
-	Uuid               types.String  `tfsdk:"uuid"`
-	ConnectionUuid     types.String  `tfsdk:"connection_uuid"`
-	Name               types.String  `tfsdk:"name"`
-	DbType             types.String  `tfsdk:"db_type"`
-	CollectorUuid      types.String  `tfsdk:"collector_uuid"`
-	Configuration      Configuration `tfsdk:"configuration"`
-	DeletionProtection types.Bool    `tfsdk:"deletion_protection"`
+	Uuid               types.String             `tfsdk:"uuid"`
+	Name               types.String             `tfsdk:"name"`
+	DbType             types.String             `tfsdk:"db_type"`
+	CollectorUuid      types.String             `tfsdk:"collector_uuid"`
+	Credentials        TransactionalCredentials `tfsdk:"credentials"`
+	DeletionProtection types.Bool               `tfsdk:"deletion_protection"`
 }
 
-type Configuration struct {
+type TransactionalCredentials struct {
+	ConnectionUuid types.String `tfsdk:"connection_uuid"`
+	Host           types.String `tfsdk:"host"`
+	Port           types.Int64  `tfsdk:"port"`
+	Database       types.String `tfsdk:"database"`
+	Username       types.String `tfsdk:"username"`
+	Password       types.String `tfsdk:"password"`
+	UpdatedAt      types.String `tfsdk:"updated_at"`
+}
+
+type TransactionalWarehouseResourceModelVO struct {
+	Uuid               types.String    `tfsdk:"uuid"`
+	ConnectionUuid     types.String    `tfsdk:"connection_uuid"`
+	Name               types.String    `tfsdk:"name"`
+	DbType             types.String    `tfsdk:"db_type"`
+	CollectorUuid      types.String    `tfsdk:"collector_uuid"`
+	Configuration      ConfigurationV0 `tfsdk:"configuration"`
+	DeletionProtection types.Bool      `tfsdk:"deletion_protection"`
+}
+
+type ConfigurationV0 struct {
 	Host     types.String `tfsdk:"host"`
 	Port     types.Int64  `tfsdk:"port"`
 	Database types.String `tfsdk:"database"`
@@ -59,15 +78,9 @@ func (r *TransactionalWarehouseResource) Metadata(ctx context.Context, req resou
 
 func (r *TransactionalWarehouseResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Version: 1,
 		Attributes: map[string]schema.Attribute{
 			"uuid": schema.StringAttribute{
-				Computed: true,
-				Optional: false,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
-			"connection_uuid": schema.StringAttribute{
 				Computed: true,
 				Optional: false,
 				PlanModifiers: []planmodifier.String{
@@ -92,9 +105,16 @@ func (r *TransactionalWarehouseResource) Schema(ctx context.Context, req resourc
 					stringplanmodifier.RequiresReplaceIfConfigured(),
 				},
 			},
-			"configuration": schema.SingleNestedAttribute{
+			"credentials": schema.SingleNestedAttribute{
 				Required: true,
 				Attributes: map[string]schema.Attribute{
+					"connection_uuid": schema.StringAttribute{
+						Computed: true,
+						Optional: false,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
+						},
+					},
 					"host": schema.StringAttribute{
 						Required: true,
 					},
@@ -103,9 +123,6 @@ func (r *TransactionalWarehouseResource) Schema(ctx context.Context, req resourc
 					},
 					"database": schema.StringAttribute{
 						Required: true,
-						PlanModifiers: []planmodifier.String{
-							stringplanmodifier.RequiresReplaceIfConfigured(),
-						},
 					},
 					"username": schema.StringAttribute{
 						Required:  true,
@@ -114,6 +131,10 @@ func (r *TransactionalWarehouseResource) Schema(ctx context.Context, req resourc
 					"password": schema.StringAttribute{
 						Required:  true,
 						Sensitive: true,
+					},
+					"updated_at": schema.StringAttribute{
+						Computed: true,
+						Optional: false,
 					},
 				},
 			},
@@ -146,7 +167,8 @@ func (r *TransactionalWarehouseResource) Create(ctx context.Context, req resourc
 	}
 
 	data.Uuid = result.Uuid
-	data.ConnectionUuid = result.ConnectionUuid
+	data.Credentials.UpdatedAt = result.Credentials.UpdatedAt
+	data.Credentials.ConnectionUuid = result.Credentials.ConnectionUuid
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -191,17 +213,18 @@ func (r *TransactionalWarehouseResource) Read(ctx context.Context, req resource.
 		return
 	}
 
-	readConnectionUuid := types.StringNull()
-	readConfiguration := Configuration{
-		Host:     types.StringNull(),
-		Port:     types.Int64Null(),
-		Database: types.StringNull(),
-		Username: types.StringNull(),
-		Password: types.StringNull(),
+	readCredentials := TransactionalCredentials{
+		ConnectionUuid: types.StringNull(),
+		Host:           types.StringNull(),
+		Port:           types.Int64Null(),
+		Database:       types.StringNull(),
+		Username:       types.StringNull(),
+		Password:       types.StringNull(),
+		UpdatedAt:      types.StringNull(),
 	}
 
 	for _, connection := range getResult.GetWarehouse.Connections {
-		if connection.Uuid == data.ConnectionUuid.ValueString() {
+		if connection.Uuid == data.Credentials.ConnectionUuid.ValueString() {
 			if connection.Type != client.TransactionalConnectionTypeResponse {
 				resp.Diagnostics.AddError(
 					fmt.Sprintf("Obtained Warehouse [uuid: %s, connection_uuid: %s] but got unexpected connection "+
@@ -209,13 +232,24 @@ func (r *TransactionalWarehouseResource) Read(ctx context.Context, req resource.
 					"Users can manually fix remote state or delete this resource from the Terraform configuration.")
 				return
 			}
-			readConnectionUuid = data.ConnectionUuid
-			readConfiguration = data.Configuration
+
+			readCredentials = data.Credentials
+			readCredentials.UpdatedAt = types.StringValue(connection.UpdatedOn)
+			if connection.UpdatedOn == "" {
+				readCredentials.UpdatedAt = types.StringValue(connection.CreatedOn)
+			}
 		}
 	}
 
-	data.ConnectionUuid = readConnectionUuid
-	data.Configuration = readConfiguration
+	if !readCredentials.ConnectionUuid.IsNull() && !readCredentials.UpdatedAt.Equal(data.Credentials.UpdatedAt) {
+		readCredentials.Host = types.StringValue("(unknown remote value)")
+		readCredentials.Port = types.Int64Value(-1)
+		readCredentials.Database = types.StringValue("(unknown remote value)")
+		readCredentials.Username = types.StringValue("(unknown remote value)")
+		readCredentials.Password = types.StringValue("(unknown remote value)")
+	}
+
+	data.Credentials = readCredentials
 	data.Name = types.StringValue(getResult.GetWarehouse.Name)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -237,10 +271,13 @@ func (r *TransactionalWarehouseResource) Update(ctx context.Context, req resourc
 		to_print := fmt.Sprintf("MC client 'SetWarehouseName' mutation result - %s", err.Error())
 		resp.Diagnostics.AddError(to_print, "")
 		return
-	} else if data.ConnectionUuid.IsUnknown() || data.ConnectionUuid.IsNull() {
+	}
+
+	if data.Credentials.ConnectionUuid.IsUnknown() || data.Credentials.ConnectionUuid.IsNull() {
 		if result, diags := r.addConnection(ctx, data); result != nil {
 			resp.Diagnostics.Append(diags...)
-			data.ConnectionUuid = result.ConnectionUuid
+			data.Credentials.UpdatedAt = result.Credentials.UpdatedAt
+			data.Credentials.ConnectionUuid = result.Credentials.ConnectionUuid
 		} else {
 			resp.Diagnostics.Append(diags...)
 			return
@@ -248,17 +285,18 @@ func (r *TransactionalWarehouseResource) Update(ctx context.Context, req resourc
 	}
 
 	updateResult := client.UpdateCredentials{}
-	host := data.Configuration.Host.ValueString()
-	port := data.Configuration.Port.ValueInt64()
 	dbType := strings.ToLower(data.DbType.ValueString())
-	username := data.Configuration.Username.ValueString()
-	password := data.Configuration.Password.ValueString()
+	host := data.Credentials.Host.ValueString()
+	port := data.Credentials.Port.ValueInt64()
+	database := data.Credentials.Database.ValueString()
+	username := data.Credentials.Username.ValueString()
+	password := data.Credentials.Password.ValueString()
 
 	variables = map[string]interface{}{
 		"changes": client.JSONString(fmt.Sprintf(
-			`{"db_type":"%s", "host": "%s", "port": "%d", "user": "%s", "password": "%s"}`,
-			dbType, host, port, username, password)),
-		"connectionId":   client.UUID(data.ConnectionUuid.ValueString()),
+			`{"db_type":"%s", "host": "%s", "port": "%d", "user": "%s", "password": "%s", "database": "%s"}`,
+			dbType, host, port, username, password, database)),
+		"connectionId":   client.UUID(data.Credentials.ConnectionUuid.ValueString()),
 		"shouldReplace":  true,
 		"shouldValidate": true,
 	}
@@ -273,6 +311,8 @@ func (r *TransactionalWarehouseResource) Update(ctx context.Context, req resourc
 		resp.Diagnostics.AddError(toPrint, "")
 		return
 	}
+
+	data.Credentials.UpdatedAt = types.StringValue(updateResult.UpdateCredentials.UpdatedAt)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -294,7 +334,7 @@ func (r *TransactionalWarehouseResource) Delete(ctx context.Context, req resourc
 	}
 
 	removeResult := client.RemoveConnection{}
-	variables := map[string]interface{}{"connectionId": client.UUID(data.ConnectionUuid.ValueString())}
+	variables := map[string]interface{}{"connectionId": client.UUID(data.Credentials.ConnectionUuid.ValueString())}
 	if err := r.client.Mutate(ctx, &removeResult, variables); err != nil {
 		toPrint := fmt.Sprintf("MC client 'RemoveConnection' mutation result - %s", err.Error())
 		resp.Diagnostics.AddError(toPrint, "")
@@ -310,9 +350,9 @@ func (r *TransactionalWarehouseResource) ImportState(ctx context.Context, req re
 	idsImported := strings.Split(req.ID, ",")
 	if len(idsImported) == 3 && idsImported[0] != "" && idsImported[1] != "" && idsImported[2] != "" {
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("uuid"), idsImported[0])...)
-		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("connection_uuid"), idsImported[1])...)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("credentials").AtName("connection_uuid"), idsImported[1])...)
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("collector_uuid"), idsImported[2])...)
-		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("configuration"), Configuration{})...)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("credentials"), TransactionalCredentials{})...)
 	} else {
 		resp.Diagnostics.AddError("Unexpected Import Identifier", fmt.Sprintf(
 			"Expected import identifier with format: <warehouse_uuid>,<connection_uuid>,<data_collector_uuid>. Got: %q", req.ID),
@@ -326,11 +366,11 @@ func (r *TransactionalWarehouseResource) addConnection(ctx context.Context, data
 	variables := map[string]interface{}{
 		"connectionType": client.TransactionalConnectionType,
 		"dbType":         strings.ToLower(data.DbType.ValueString()),
-		"host":           data.Configuration.Host.ValueString(),
-		"port":           data.Configuration.Port.ValueInt64(),
-		"dbName":         data.Configuration.Database.ValueString(),
-		"user":           data.Configuration.Username.ValueString(),
-		"password":       data.Configuration.Password.ValueString(),
+		"host":           data.Credentials.Host.ValueString(),
+		"port":           data.Credentials.Port.ValueInt64(),
+		"dbName":         data.Credentials.Database.ValueString(),
+		"user":           data.Credentials.Username.ValueString(),
+		"password":       data.Credentials.Password.ValueString(),
 	}
 
 	if err := r.client.Mutate(ctx, &testResult, variables); err != nil {
@@ -373,7 +413,8 @@ func (r *TransactionalWarehouseResource) addConnection(ctx context.Context, data
 	}
 
 	data.Uuid = types.StringValue(addResult.AddConnection.Connection.Warehouse.Uuid)
-	data.ConnectionUuid = types.StringValue(addResult.AddConnection.Connection.Uuid)
+	data.Credentials.UpdatedAt = types.StringValue(addResult.AddConnection.Connection.CreatedOn)
+	data.Credentials.ConnectionUuid = types.StringValue(addResult.AddConnection.Connection.Uuid)
 	return &data, diagsResult
 }
 
@@ -383,4 +424,99 @@ func databaseTestDiagnosticsToDiags(in []client.DatabaseTestDiagnostic) diag.Dia
 		diags.AddWarning(value.Message, value.Type)
 	}
 	return diags
+}
+
+func (r *TransactionalWarehouseResource) UpgradeState(ctx context.Context) map[int64]resource.StateUpgrader {
+	return map[int64]resource.StateUpgrader{
+		0: {
+			PriorSchema: &schema.Schema{
+				Attributes: map[string]schema.Attribute{
+					"uuid": schema.StringAttribute{
+						Computed: true,
+						Optional: false,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
+						},
+					},
+					"connection_uuid": schema.StringAttribute{
+						Computed: true,
+						Optional: false,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
+						},
+					},
+					"name": schema.StringAttribute{
+						Required: true,
+					},
+					"db_type": schema.StringAttribute{
+						Required: true,
+						Validators: []validator.String{
+							stringvalidator.OneOf("POSTGRES", "MYSQL", "SQL-SERVER"),
+						},
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplaceIfConfigured(),
+						},
+					},
+					"collector_uuid": schema.StringAttribute{
+						Required: true,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplaceIfConfigured(),
+						},
+					},
+					"configuration": schema.SingleNestedAttribute{
+						Required: true,
+						Attributes: map[string]schema.Attribute{
+							"host": schema.StringAttribute{
+								Required: true,
+							},
+							"port": schema.Int64Attribute{
+								Required: true,
+							},
+							"database": schema.StringAttribute{
+								Required: true,
+								PlanModifiers: []planmodifier.String{
+									stringplanmodifier.RequiresReplaceIfConfigured(),
+								},
+							},
+							"username": schema.StringAttribute{
+								Required:  true,
+								Sensitive: true,
+							},
+							"password": schema.StringAttribute{
+								Required:  true,
+								Sensitive: true,
+							},
+						},
+					},
+					"deletion_protection": schema.BoolAttribute{
+						Optional: true,
+						Computed: true,
+						Default:  booldefault.StaticBool(true),
+					},
+				},
+			},
+			StateUpgrader: func(ctx context.Context, req resource.UpgradeStateRequest, resp *resource.UpgradeStateResponse) {
+				var priorStateData TransactionalWarehouseResourceModelVO
+				resp.Diagnostics.Append(req.State.Get(ctx, &priorStateData)...)
+				if !resp.Diagnostics.HasError() {
+					upgradedStateData := TransactionalWarehouseResourceModel{
+						Uuid:          priorStateData.Uuid,
+						CollectorUuid: priorStateData.CollectorUuid,
+						Name:          priorStateData.Name,
+						DbType:        priorStateData.DbType,
+						Credentials: TransactionalCredentials{
+							ConnectionUuid: priorStateData.ConnectionUuid,
+							Host:           priorStateData.Configuration.Host,
+							Port:           priorStateData.Configuration.Port,
+							Database:       priorStateData.Configuration.Database,
+							Username:       priorStateData.Configuration.Username,
+							Password:       priorStateData.Configuration.Password,
+							UpdatedAt:      types.StringNull(),
+						},
+					}
+					resp.Diagnostics.Append(resp.State.Set(ctx, upgradedStateData)...)
+				}
+			},
+		},
+	}
 }

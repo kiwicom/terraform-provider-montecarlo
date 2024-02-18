@@ -38,14 +38,14 @@ type BigQueryWarehouseResource struct {
 
 // BigQueryWarehouseResourceModel describes the resource data model according to its Schema.
 type BigQueryWarehouseResourceModel struct {
-	Uuid               types.String `tfsdk:"uuid"`
-	Credentials        Credentials  `tfsdk:"credentials"`
-	Name               types.String `tfsdk:"name"`
-	CollectorUuid      types.String `tfsdk:"collector_uuid"`
-	DeletionProtection types.Bool   `tfsdk:"deletion_protection"`
+	Uuid               types.String  `tfsdk:"uuid"`
+	Credentials        BqCredentials `tfsdk:"credentials"`
+	Name               types.String  `tfsdk:"name"`
+	CollectorUuid      types.String  `tfsdk:"collector_uuid"`
+	DeletionProtection types.Bool    `tfsdk:"deletion_protection"`
 }
 
-type Credentials struct {
+type BqCredentials struct {
 	ConnectionUuid    types.String `tfsdk:"connection_uuid"`
 	ServiceAccountKey types.String `tfsdk:"service_account_key"`
 	UpdatedAt         types.String `tfsdk:"updated_at"`
@@ -75,7 +75,7 @@ func (r *BigQueryWarehouseResource) Metadata(ctx context.Context, req resource.M
 
 func (r *BigQueryWarehouseResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Version: 1,
+		Version: 2,
 		Attributes: map[string]schema.Attribute{
 			"uuid": schema.StringAttribute{
 				Computed: true,
@@ -495,7 +495,7 @@ func (r *BigQueryWarehouseResource) UpgradeState(ctx context.Context) map[int64]
 						CollectorUuid:      priorStateData.CollectorUuid,
 						Name:               priorStateData.Name,
 						DeletionProtection: priorStateData.DeletionProtection,
-						Credentials: Credentials{
+						Credentials: BqCredentials{
 							ConnectionUuid:    priorStateData.ConnectionUuid,
 							ServiceAccountKey: priorStateData.ServiceAccountKey,
 							UpdatedAt:         types.StringNull(),
