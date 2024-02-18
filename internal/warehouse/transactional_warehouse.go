@@ -123,9 +123,6 @@ func (r *TransactionalWarehouseResource) Schema(ctx context.Context, req resourc
 					},
 					"database": schema.StringAttribute{
 						Required: true,
-						PlanModifiers: []planmodifier.String{
-							stringplanmodifier.RequiresReplaceIfConfigured(),
-						},
 					},
 					"username": schema.StringAttribute{
 						Required:  true,

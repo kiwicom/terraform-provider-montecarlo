@@ -54,7 +54,7 @@ func TestAccTransactionalWarehouseResource(t *testing.T) {
 				},
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "name", "name1"),
-					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "credentials.collector_uuid", collectorUuid),
+					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "collector_uuid", collectorUuid),
 					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "deletion_protection", "false"),
 					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "credentials.host", pgHost),
 					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "credentials.port", pgPortRaw),
@@ -99,7 +99,7 @@ func TestAccTransactionalWarehouseResource(t *testing.T) {
 				},
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "name", "name1"),
-					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "credentials.collector_uuid", collectorUuid),
+					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "collector_uuid", collectorUuid),
 					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "deletion_protection", "false"),
 					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "credentials.host", pgHost),
 					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "credentials.port", pgPortRaw),
