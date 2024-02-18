@@ -319,7 +319,7 @@ func (r *BigQueryWarehouseResource) ImportState(ctx context.Context, req resourc
 	}
 }
 
-func (r *BigQueryWarehouseResource) addConnection(ctx context.Context, data BigQueryWarehouseResourceModel) (*BigQueryWarehouseResourceModel, diag.Diagnostics) {
+func (r *BigQueryWarehouseResource) testCredentials(ctx context.Context, data BigQueryWarehouseResourceModel) (*client.TestBqCredentialsV2, diag.Diagnostics) {
 	var diagsResult diag.Diagnostics
 	type BqConnectionDetails map[string]interface{}
 	testResult := client.TestBqCredentialsV2{}
@@ -341,6 +341,18 @@ func (r *BigQueryWarehouseResource) addConnection(ctx context.Context, data BigQ
 		diags = append(diags, bqTestDiagnosticToDiags(testResult.TestBqCredentialsV2.ValidationResult.Errors)...)
 		diagsResult.Append(diags...)
 		return nil, diagsResult
+	} else {
+		return &testResult, diagsResult
+	}
+}
+
+func (r *BigQueryWarehouseResource) addConnection(ctx context.Context, data BigQueryWarehouseResourceModel) (*BigQueryWarehouseResourceModel, diag.Diagnostics) {
+	var diagsResult diag.Diagnostics
+	testResult, credentialsDiags := r.testCredentials(ctx, data)
+
+	if testResult == nil {
+		diagsResult.Append(credentialsDiags...)
+		return nil, diagsResult
 	}
 
 	addResult := client.AddConnection{}
@@ -355,7 +367,7 @@ func (r *BigQueryWarehouseResource) addConnection(ctx context.Context, data BigQ
 		createWarehouseType = &temp
 	}
 
-	variables = map[string]interface{}{
+	variables := map[string]interface{}{
 		"dcId":                (*client.UUID)(collectorUuid),
 		"dwId":                (*client.UUID)(warehouseUuid),
 		"key":                 testResult.TestBqCredentialsV2.Key,
