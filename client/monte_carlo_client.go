@@ -136,6 +136,13 @@ type UpdateCredentials struct {
 	} `graphql:"updateCredentials(changes: $changes, connectionId: $connectionId, shouldReplace: $shouldReplace, shouldValidate: $shouldValidate)"`
 }
 
+type UpdateCredentialsV2 struct {
+	UpdateCredentialsV2 struct {
+		Success   bool
+		UpdatedAt string
+	} `graphql:"updateCredentialsV2(connectionId: $connectionId, tempCredentialsKey: $tempCredentialsKey)"`
+}
+
 type TagPair struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
