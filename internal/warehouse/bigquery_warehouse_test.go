@@ -37,7 +37,7 @@ func TestAccBigQueryWarehouseResource(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "name", "test-warehouse"),
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "collector_uuid", collectorUuid),
-					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "service_account_key", serviceAccount),
+					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "credentials.service_account_key", serviceAccount),
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "deletion_protection", "false"),
 				),
 			},
@@ -53,11 +53,11 @@ func TestAccBigQueryWarehouseResource(t *testing.T) {
 				ImportStateVerify: true,
 				ImportStateIdFunc: func(s *terraform.State) (string, error) {
 					uuid := s.RootModule().Resources["montecarlo_bigquery_warehouse.test"].Primary.Attributes["uuid"]
-					connectionUuid := s.RootModule().Resources["montecarlo_bigquery_warehouse.test"].Primary.Attributes["connection_uuid"]
+					connectionUuid := s.RootModule().Resources["montecarlo_bigquery_warehouse.test"].Primary.Attributes["credentials.connection_uuid"]
 					return fmt.Sprintf("%[1]s,%[2]s,%[3]s", uuid, connectionUuid, collectorUuid), nil
 				},
 				ImportStateVerifyIdentifierAttribute: "uuid",
-				ImportStateVerifyIgnore:              []string{"deletion_protection", "service_account_key"},
+				ImportStateVerifyIgnore:              []string{"deletion_protection", "credentials.service_account_key"},
 			},
 			{ // Update and Read testing
 				ProtoV6ProviderFactories: acctest.TestAccProviderFactories,
@@ -70,7 +70,7 @@ func TestAccBigQueryWarehouseResource(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "name", "test-warehouse-updated"),
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "collector_uuid", collectorUuid),
-					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "service_account_key", serviceAccount),
+					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "credentials.service_account_key", serviceAccount),
 					resource.TestCheckResourceAttr("montecarlo_bigquery_warehouse.test", "deletion_protection", "false"),
 				),
 			},
