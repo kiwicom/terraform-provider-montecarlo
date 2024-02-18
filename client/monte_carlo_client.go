@@ -112,7 +112,7 @@ const BigQueryConnectionType = "bigquery"
 const BigQueryConnectionTypeResponse = "BIGQUERY"
 const TransactionalConnectionType = "transactional-db"
 const TransactionalConnectionTypeResponse = "TRANSACTIONAL_DB"
-const GetWarehouseQuery string = "query getWarehouse($uuid: UUID) { getWarehouse(uuid: $uuid) { name,connections{uuid,type},dataCollector{uuid} } }"
+const GetWarehouseQuery string = "query getWarehouse($uuid: UUID) { getWarehouse(uuid: $uuid) { name,connections{uuid,type,createdOn,updatedOn},dataCollector{uuid} } }"
 
 type RemoveConnection struct {
 	RemoveConnection struct {
@@ -131,7 +131,8 @@ type SetWarehouseName struct {
 
 type UpdateCredentials struct {
 	UpdateCredentials struct {
-		Success bool
+		Success   bool
+		UpdatedAt string
 	} `graphql:"updateCredentials(changes: $changes, connectionId: $connectionId, shouldReplace: $shouldReplace, shouldValidate: $shouldValidate)"`
 }
 
