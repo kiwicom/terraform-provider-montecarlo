@@ -284,36 +284,12 @@ func (r *TransactionalWarehouseResource) Update(ctx context.Context, req resourc
 		}
 	}
 
-	updateResult := client.UpdateCredentials{}
-	dbType := strings.ToLower(data.DbType.ValueString())
-	host := data.Credentials.Host.ValueString()
-	port := data.Credentials.Port.ValueInt64()
-	database := data.Credentials.Database.ValueString()
-	username := data.Credentials.Username.ValueString()
-	password := data.Credentials.Password.ValueString()
-
-	variables = map[string]interface{}{
-		"changes": client.JSONString(fmt.Sprintf(
-			`{"db_type":"%s", "host": "%s", "port": "%d", "user": "%s", "password": "%s", "database": "%s"}`,
-			dbType, host, port, username, password, database)),
-		"connectionId":   client.UUID(data.Credentials.ConnectionUuid.ValueString()),
-		"shouldReplace":  true,
-		"shouldValidate": true,
+	if updateResult, diags := r.updateConnection(ctx, data); updateResult == nil {
+		resp.Diagnostics.Append(diags...)
+	} else {
+		data.Credentials.UpdatedAt = types.StringValue(updateResult.UpdateCredentialsV2.UpdatedAt)
+		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 	}
-
-	if err := r.client.Mutate(ctx, &updateResult, variables); err != nil {
-		toPrint := fmt.Sprintf("MC client 'UpdateCredentials' mutation result - %s", err.Error())
-		resp.Diagnostics.AddError(toPrint, "")
-		return
-	} else if !updateResult.UpdateCredentials.Success {
-		toPrint := "MC client 'UpdateCredentials' mutation - success = false, " +
-			"connection probably doesnt exists. Rerunning terraform operation usually helps."
-		resp.Diagnostics.AddError(toPrint, "")
-		return
-	}
-
-	data.Credentials.UpdatedAt = types.StringValue(updateResult.UpdateCredentials.UpdatedAt)
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
 func (r *TransactionalWarehouseResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -390,7 +366,7 @@ func (r *TransactionalWarehouseResource) testCredentials(ctx context.Context, da
 func (r *TransactionalWarehouseResource) addConnection(ctx context.Context, data TransactionalWarehouseResourceModel) (*TransactionalWarehouseResourceModel, diag.Diagnostics) {
 	var diagsResult diag.Diagnostics
 	testResult, credentialsDiags := r.testCredentials(ctx, data)
-	
+
 	if testResult == nil {
 		diagsResult.Append(credentialsDiags...)
 		return nil, diagsResult
@@ -428,6 +404,35 @@ func (r *TransactionalWarehouseResource) addConnection(ctx context.Context, data
 	data.Credentials.UpdatedAt = types.StringValue(addResult.AddConnection.Connection.CreatedOn)
 	data.Credentials.ConnectionUuid = types.StringValue(addResult.AddConnection.Connection.Uuid)
 	return &data, diagsResult
+}
+
+func (r *TransactionalWarehouseResource) updateConnection(ctx context.Context, data TransactionalWarehouseResourceModel) (*client.UpdateCredentialsV2, diag.Diagnostics) {
+	var diagsResult diag.Diagnostics
+	testResult, credentialsDiags := r.testCredentials(ctx, data)
+
+	if testResult == nil {
+		diagsResult.Append(credentialsDiags...)
+		return nil, diagsResult
+	}
+
+	updateResult := client.UpdateCredentialsV2{}
+	variables := map[string]interface{}{
+		"connectionId":       client.UUID(data.Credentials.ConnectionUuid.ValueString()),
+		"tempCredentialsKey": testResult.TestDatabaseCredentials.Key,
+	}
+
+	if err := r.client.Mutate(ctx, &updateResult, variables); err != nil {
+		toPrint := fmt.Sprintf("MC client 'UpdateCredentials' mutation result - %s", err.Error())
+		diagsResult.AddError(toPrint, "")
+		return nil, diagsResult
+	} else if !updateResult.UpdateCredentialsV2.Success {
+		toPrint := "MC client 'UpdateCredentials' mutation - success = false, " +
+			"connection probably doesnt exists. Rerunning terraform operation usually helps."
+		diagsResult.AddError(toPrint, "")
+		return nil, diagsResult
+	} else {
+		return &updateResult, diagsResult
+	}
 }
 
 func databaseTestDiagnosticsToDiags(in []client.DatabaseTestDiagnostic) diag.Diagnostics {

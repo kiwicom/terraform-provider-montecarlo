@@ -53,7 +53,7 @@ func TestAccTransactionalWarehouseResource(t *testing.T) {
 					"pg_password":              config.StringVariable(pgPassword),
 				},
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "name", "name1"),
+					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "name", "test-warehouse"),
 					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "collector_uuid", collectorUuid),
 					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "deletion_protection", "false"),
 					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "credentials.host", pgHost),
@@ -98,7 +98,7 @@ func TestAccTransactionalWarehouseResource(t *testing.T) {
 					"pg_password":              config.StringVariable(pgPassword),
 				},
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "name", "name1"),
+					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "name", "test-warehouse-updated"),
 					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "collector_uuid", collectorUuid),
 					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "deletion_protection", "false"),
 					resource.TestCheckResourceAttr("montecarlo_transactional_warehouse.test", "credentials.host", pgHost),
