@@ -360,7 +360,7 @@ func (r *TransactionalWarehouseResource) ImportState(ctx context.Context, req re
 	}
 }
 
-func (r *TransactionalWarehouseResource) addConnection(ctx context.Context, data TransactionalWarehouseResourceModel) (*TransactionalWarehouseResourceModel, diag.Diagnostics) {
+func (r *TransactionalWarehouseResource) testCredentials(ctx context.Context, data TransactionalWarehouseResourceModel) (*client.TestDatabaseCredentials, diag.Diagnostics) {
 	var diagsResult diag.Diagnostics
 	testResult := client.TestDatabaseCredentials{}
 	variables := map[string]interface{}{
@@ -382,6 +382,18 @@ func (r *TransactionalWarehouseResource) addConnection(ctx context.Context, data
 		diags = append(diags, databaseTestDiagnosticsToDiags(testResult.TestDatabaseCredentials.Validations)...)
 		diagsResult.Append(diags...)
 		return nil, diagsResult
+	} else {
+		return &testResult, diagsResult
+	}
+}
+
+func (r *TransactionalWarehouseResource) addConnection(ctx context.Context, data TransactionalWarehouseResourceModel) (*TransactionalWarehouseResourceModel, diag.Diagnostics) {
+	var diagsResult diag.Diagnostics
+	testResult, credentialsDiags := r.testCredentials(ctx, data)
+	
+	if testResult == nil {
+		diagsResult.Append(credentialsDiags...)
+		return nil, diagsResult
 	}
 
 	addResult := client.AddConnection{}
@@ -396,7 +408,7 @@ func (r *TransactionalWarehouseResource) addConnection(ctx context.Context, data
 		createWarehouseType = &temp
 	}
 
-	variables = map[string]interface{}{
+	variables := map[string]interface{}{
 		"dcId":                (*client.UUID)(collectorUuid),
 		"dwId":                (*client.UUID)(warehouseUuid),
 		"key":                 testResult.TestDatabaseCredentials.Key,
