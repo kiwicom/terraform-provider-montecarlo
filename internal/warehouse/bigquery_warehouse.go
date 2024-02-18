@@ -51,6 +51,13 @@ type BqCredentials struct {
 	UpdatedAt         types.String `tfsdk:"updated_at"`
 }
 
+func (m BigQueryWarehouseResourceModel) GetUuid() types.String          { return m.Uuid }
+func (m BigQueryWarehouseResourceModel) GetCollectorUuid() types.String { return m.CollectorUuid }
+func (m BigQueryWarehouseResourceModel) GetName() types.String          { return m.Name }
+func (m BigQueryWarehouseResourceModel) GetConnectionUuid() types.String {
+	return m.Credentials.ConnectionUuid
+}
+
 type BigQueryWarehouseResourceModelV1 struct {
 	Uuid               types.String `tfsdk:"uuid"`
 	ConnectionUuid     types.String `tfsdk:"connection_uuid"`
@@ -136,15 +143,15 @@ func (r *BigQueryWarehouseResource) Create(ctx context.Context, req resource.Cre
 		return
 	}
 
-	result, diags := r.addConnection(ctx, data)
+	result, diags := addConnection(ctx, r.client, r, data, client.BqConnectionType, BqKeyExtractor)
 	resp.Diagnostics.Append(diags...)
 	if result == nil {
 		return
 	}
 
-	data.Uuid = result.Uuid
-	data.Credentials.UpdatedAt = result.Credentials.UpdatedAt
-	data.Credentials.ConnectionUuid = result.Credentials.ConnectionUuid
+	data.Uuid = types.StringValue(result.AddConnection.Connection.Warehouse.Uuid)
+	data.Credentials.UpdatedAt = types.StringValue(result.AddConnection.Connection.CreatedOn)
+	data.Credentials.ConnectionUuid = types.StringValue(result.AddConnection.Connection.Uuid)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -195,7 +202,7 @@ func (r *BigQueryWarehouseResource) Read(ctx context.Context, req resource.ReadR
 
 	for _, connection := range getResult.GetWarehouse.Connections {
 		if connection.Uuid == data.Credentials.ConnectionUuid.ValueString() {
-			if connection.Type != client.BigQueryConnectionTypeResponse {
+			if connection.Type != client.BqConnectionTypeResponse {
 				resp.Diagnostics.AddError(
 					fmt.Sprintf("Obtained Warehouse [uuid: %s, connection_uuid: %s] but got unexpected connection "+
 						"type '%s'.", data.Uuid.ValueString(), connection.Uuid, connection.Type),
@@ -243,17 +250,17 @@ func (r *BigQueryWarehouseResource) Update(ctx context.Context, req resource.Upd
 	}
 
 	if data.Credentials.ConnectionUuid.IsUnknown() || data.Credentials.ConnectionUuid.IsNull() {
-		if result, diags := r.addConnection(ctx, data); result != nil {
+		if result, diags := addConnection(ctx, r.client, r, data, client.BqConnectionType, BqKeyExtractor); result != nil {
 			resp.Diagnostics.Append(diags...)
-			data.Credentials.UpdatedAt = result.Credentials.UpdatedAt
-			data.Credentials.ConnectionUuid = result.Credentials.ConnectionUuid
+			data.Credentials.UpdatedAt = types.StringValue(result.AddConnection.Connection.CreatedOn)
+			data.Credentials.ConnectionUuid = types.StringValue(result.AddConnection.Connection.Uuid)
 		} else {
 			resp.Diagnostics.Append(diags...)
 			return
 		}
 	}
 
-	if updateResult, diags := r.updateConnection(ctx, data); updateResult == nil {
+	if updateResult, diags := updateConnection(ctx, r.client, r, data, BqKeyExtractor); updateResult == nil {
 		resp.Diagnostics.Append(diags...)
 	} else {
 		data.Credentials.UpdatedAt = types.StringValue(updateResult.UpdateCredentialsV2.UpdatedAt)
@@ -328,78 +335,6 @@ func (r *BigQueryWarehouseResource) testCredentials(ctx context.Context, data Bi
 		return nil, diagsResult
 	} else {
 		return &testResult, diagsResult
-	}
-}
-
-func (r *BigQueryWarehouseResource) addConnection(ctx context.Context, data BigQueryWarehouseResourceModel) (*BigQueryWarehouseResourceModel, diag.Diagnostics) {
-	var diagsResult diag.Diagnostics
-	testResult, credentialsDiags := r.testCredentials(ctx, data)
-
-	if testResult == nil {
-		diagsResult.Append(credentialsDiags...)
-		return nil, diagsResult
-	}
-
-	addResult := client.AddConnection{}
-	var name, createWarehouseType *string = nil, nil
-	warehouseUuid := data.Uuid.ValueStringPointer()
-	collectorUuid := data.CollectorUuid.ValueStringPointer()
-
-	if warehouseUuid == nil || *warehouseUuid == "" {
-		warehouseUuid = nil
-		name = data.Name.ValueStringPointer()
-		temp := client.BigQueryConnectionType
-		createWarehouseType = &temp
-	}
-
-	variables := map[string]interface{}{
-		"dcId":                (*client.UUID)(collectorUuid),
-		"dwId":                (*client.UUID)(warehouseUuid),
-		"key":                 testResult.TestBqCredentialsV2.Key,
-		"jobTypes":            []string{"metadata", "query_logs", "sql_query", "json_schema"},
-		"name":                name,
-		"connectionType":      client.BigQueryConnectionType,
-		"createWarehouseType": createWarehouseType,
-	}
-
-	if err := r.client.Mutate(ctx, &addResult, variables); err != nil {
-		toPrint := fmt.Sprintf("MC client 'AddConnection' mutation result - %s", err.Error())
-		diagsResult.AddError(toPrint, "")
-		return nil, diagsResult
-	}
-
-	data.Uuid = types.StringValue(addResult.AddConnection.Connection.Warehouse.Uuid)
-	data.Credentials.UpdatedAt = types.StringValue(addResult.AddConnection.Connection.CreatedOn)
-	data.Credentials.ConnectionUuid = types.StringValue(addResult.AddConnection.Connection.Uuid)
-	return &data, diagsResult
-}
-
-func (r *BigQueryWarehouseResource) updateConnection(ctx context.Context, data BigQueryWarehouseResourceModel) (*client.UpdateCredentialsV2, diag.Diagnostics) {
-	var diagsResult diag.Diagnostics
-	testResult, credentialsDiags := r.testCredentials(ctx, data)
-
-	if testResult == nil {
-		diagsResult.Append(credentialsDiags...)
-		return nil, diagsResult
-	}
-
-	updateResult := client.UpdateCredentialsV2{}
-	variables := map[string]interface{}{
-		"connectionId":       client.UUID(data.Credentials.ConnectionUuid.ValueString()),
-		"tempCredentialsKey": testResult.TestBqCredentialsV2.Key,
-	}
-
-	if err := r.client.Mutate(ctx, &updateResult, variables); err != nil {
-		toPrint := fmt.Sprintf("MC client 'UpdateCredentials' mutation result - %s", err.Error())
-		diagsResult.AddError(toPrint, "")
-		return nil, diagsResult
-	} else if !updateResult.UpdateCredentialsV2.Success {
-		toPrint := "MC client 'UpdateCredentials' mutation - success = false, " +
-			"connection probably doesnt exists. Rerunning terraform operation usually helps."
-		diagsResult.AddError(toPrint, "")
-		return nil, diagsResult
-	} else {
-		return &updateResult, diagsResult
 	}
 }
 
