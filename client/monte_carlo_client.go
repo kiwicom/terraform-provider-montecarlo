@@ -83,6 +83,8 @@ type AddConnection struct {
 	AddConnection struct {
 		Connection struct {
 			Uuid      string
+			CreatedOn string
+			UpdatedOn string
 			Warehouse struct {
 				Name string
 				Uuid string
@@ -95,8 +97,10 @@ type GetWarehouse struct {
 	GetWarehouse *struct {
 		Name        string `json:"name"`
 		Connections []struct {
-			Uuid string `json:"uuid"`
-			Type string `json:"type"`
+			Uuid      string `json:"uuid"`
+			Type      string `json:"type"`
+			CreatedOn string `json:"createdOn"`
+			UpdatedOn string `json:"updatedOn"`
 		} `json:"connections"`
 		DataCollector struct {
 			Uuid string `json:"uuid"`
@@ -108,7 +112,7 @@ const BigQueryConnectionType = "bigquery"
 const BigQueryConnectionTypeResponse = "BIGQUERY"
 const TransactionalConnectionType = "transactional-db"
 const TransactionalConnectionTypeResponse = "TRANSACTIONAL_DB"
-const GetWarehouseQuery string = "query getWarehouse($uuid: UUID) { getWarehouse(uuid: $uuid) { name,connections{uuid,type},dataCollector{uuid} } }"
+const GetWarehouseQuery string = "query getWarehouse($uuid: UUID) { getWarehouse(uuid: $uuid) { name,connections{uuid,type,createdOn,updatedOn},dataCollector{uuid} } }"
 
 type RemoveConnection struct {
 	RemoveConnection struct {
@@ -127,7 +131,8 @@ type SetWarehouseName struct {
 
 type UpdateCredentials struct {
 	UpdateCredentials struct {
-		Success bool
+		Success   bool
+		UpdatedAt string
 	} `graphql:"updateCredentials(changes: $changes, connectionId: $connectionId, shouldReplace: $shouldReplace, shouldValidate: $shouldValidate)"`
 }
 
@@ -299,7 +304,7 @@ type CreateOrUpdateComparisonRule struct {
 			Severity          string
 			RuleType          string
 			WarehouseUuid     string
-			Comparisons []struct {
+			Comparisons       []struct {
 				ComparisonType string
 				FullTableId    string
 				FullTableIds   []string
@@ -307,7 +312,6 @@ type CreateOrUpdateComparisonRule struct {
 				Metric         string
 				Operator       string
 				Threshold      float64
-
 			}
 		}
 	} `graphql:"createOrUpdateComparisonRule(comparisons: $comparisons, customRuleUuid: $customRuleUuid, description: $description, queryResultType: $queryResultType, scheduleConfig: $scheduleConfig, sourceConnectionId: $sourceConnectionId, sourceDwId: $sourceDwId, sourceSqlQuery: $sourceSqlQuery, targetConnectionId: $targetConnectionId, targetDwId: $targetDwId, targetSqlQuery: $targetSqlQuery)"`
