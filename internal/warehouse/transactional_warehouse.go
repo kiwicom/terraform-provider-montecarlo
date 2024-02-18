@@ -54,6 +54,13 @@ type TransactionalCredentials struct {
 	UpdatedAt      types.String `tfsdk:"updated_at"`
 }
 
+func (m TransactionalWarehouseResourceModel) GetUuid() types.String          { return m.Uuid }
+func (m TransactionalWarehouseResourceModel) GetCollectorUuid() types.String { return m.CollectorUuid }
+func (m TransactionalWarehouseResourceModel) GetName() types.String          { return m.Name }
+func (m TransactionalWarehouseResourceModel) GetConnectionUuid() types.String {
+	return m.Credentials.ConnectionUuid
+}
+
 type TransactionalWarehouseResourceModelVO struct {
 	Uuid               types.String    `tfsdk:"uuid"`
 	ConnectionUuid     types.String    `tfsdk:"connection_uuid"`
@@ -160,15 +167,15 @@ func (r *TransactionalWarehouseResource) Create(ctx context.Context, req resourc
 		return
 	}
 
-	result, diags := r.addConnection(ctx, data)
+	result, diags := addConnection(ctx, r.client, r, data, client.TrxConnectionType, TrxKeyExtractor)
 	resp.Diagnostics.Append(diags...)
 	if result == nil {
 		return
 	}
 
-	data.Uuid = result.Uuid
-	data.Credentials.UpdatedAt = result.Credentials.UpdatedAt
-	data.Credentials.ConnectionUuid = result.Credentials.ConnectionUuid
+	data.Uuid = types.StringValue(result.AddConnection.Connection.Warehouse.Uuid)
+	data.Credentials.UpdatedAt = types.StringValue(result.AddConnection.Connection.CreatedOn)
+	data.Credentials.ConnectionUuid = types.StringValue(result.AddConnection.Connection.Uuid)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -225,7 +232,7 @@ func (r *TransactionalWarehouseResource) Read(ctx context.Context, req resource.
 
 	for _, connection := range getResult.GetWarehouse.Connections {
 		if connection.Uuid == data.Credentials.ConnectionUuid.ValueString() {
-			if connection.Type != client.TransactionalConnectionTypeResponse {
+			if connection.Type != client.TrxConnectionTypeResponse {
 				resp.Diagnostics.AddError(
 					fmt.Sprintf("Obtained Warehouse [uuid: %s, connection_uuid: %s] but got unexpected connection "+
 						"type '%s'", data.Uuid.ValueString(), connection.Uuid, connection.Type),
@@ -274,46 +281,22 @@ func (r *TransactionalWarehouseResource) Update(ctx context.Context, req resourc
 	}
 
 	if data.Credentials.ConnectionUuid.IsUnknown() || data.Credentials.ConnectionUuid.IsNull() {
-		if result, diags := r.addConnection(ctx, data); result != nil {
+		if result, diags := addConnection(ctx, r.client, r, data, client.TrxConnectionType, TrxKeyExtractor); result != nil {
 			resp.Diagnostics.Append(diags...)
-			data.Credentials.UpdatedAt = result.Credentials.UpdatedAt
-			data.Credentials.ConnectionUuid = result.Credentials.ConnectionUuid
+			data.Credentials.UpdatedAt = types.StringValue(result.AddConnection.Connection.CreatedOn)
+			data.Credentials.ConnectionUuid = types.StringValue(result.AddConnection.Connection.Uuid)
 		} else {
 			resp.Diagnostics.Append(diags...)
 			return
 		}
 	}
 
-	updateResult := client.UpdateCredentials{}
-	dbType := strings.ToLower(data.DbType.ValueString())
-	host := data.Credentials.Host.ValueString()
-	port := data.Credentials.Port.ValueInt64()
-	database := data.Credentials.Database.ValueString()
-	username := data.Credentials.Username.ValueString()
-	password := data.Credentials.Password.ValueString()
-
-	variables = map[string]interface{}{
-		"changes": client.JSONString(fmt.Sprintf(
-			`{"db_type":"%s", "host": "%s", "port": "%d", "user": "%s", "password": "%s", "database": "%s"}`,
-			dbType, host, port, username, password, database)),
-		"connectionId":   client.UUID(data.Credentials.ConnectionUuid.ValueString()),
-		"shouldReplace":  true,
-		"shouldValidate": true,
+	if updateResult, diags := updateConnection(ctx, r.client, r, data, TrxKeyExtractor); updateResult == nil {
+		resp.Diagnostics.Append(diags...)
+	} else {
+		data.Credentials.UpdatedAt = types.StringValue(updateResult.UpdateCredentialsV2.UpdatedAt)
+		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 	}
-
-	if err := r.client.Mutate(ctx, &updateResult, variables); err != nil {
-		toPrint := fmt.Sprintf("MC client 'UpdateCredentials' mutation result - %s", err.Error())
-		resp.Diagnostics.AddError(toPrint, "")
-		return
-	} else if !updateResult.UpdateCredentials.Success {
-		toPrint := "MC client 'UpdateCredentials' mutation - success = false, " +
-			"connection probably doesnt exists. Rerunning terraform operation usually helps."
-		resp.Diagnostics.AddError(toPrint, "")
-		return
-	}
-
-	data.Credentials.UpdatedAt = types.StringValue(updateResult.UpdateCredentials.UpdatedAt)
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
 func (r *TransactionalWarehouseResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -360,11 +343,11 @@ func (r *TransactionalWarehouseResource) ImportState(ctx context.Context, req re
 	}
 }
 
-func (r *TransactionalWarehouseResource) addConnection(ctx context.Context, data TransactionalWarehouseResourceModel) (*TransactionalWarehouseResourceModel, diag.Diagnostics) {
+func (r *TransactionalWarehouseResource) testCredentials(ctx context.Context, data TransactionalWarehouseResourceModel) (*client.TestDatabaseCredentials, diag.Diagnostics) {
 	var diagsResult diag.Diagnostics
 	testResult := client.TestDatabaseCredentials{}
 	variables := map[string]interface{}{
-		"connectionType": client.TransactionalConnectionType,
+		"connectionType": client.TrxConnectionType,
 		"dbType":         strings.ToLower(data.DbType.ValueString()),
 		"host":           data.Credentials.Host.ValueString(),
 		"port":           data.Credentials.Port.ValueInt64(),
@@ -382,40 +365,9 @@ func (r *TransactionalWarehouseResource) addConnection(ctx context.Context, data
 		diags = append(diags, databaseTestDiagnosticsToDiags(testResult.TestDatabaseCredentials.Validations)...)
 		diagsResult.Append(diags...)
 		return nil, diagsResult
+	} else {
+		return &testResult, diagsResult
 	}
-
-	addResult := client.AddConnection{}
-	var name, createWarehouseType *string = nil, nil
-	warehouseUuid := data.Uuid.ValueStringPointer()
-	collectorUuid := data.CollectorUuid.ValueStringPointer()
-
-	if warehouseUuid == nil || *warehouseUuid == "" {
-		warehouseUuid = nil
-		name = data.Name.ValueStringPointer()
-		temp := client.TransactionalConnectionType
-		createWarehouseType = &temp
-	}
-
-	variables = map[string]interface{}{
-		"dcId":                (*client.UUID)(collectorUuid),
-		"dwId":                (*client.UUID)(warehouseUuid),
-		"key":                 testResult.TestDatabaseCredentials.Key,
-		"jobTypes":            []string{"metadata", "query_logs", "sql_query", "json_schema"},
-		"name":                name,
-		"connectionType":      client.TransactionalConnectionType,
-		"createWarehouseType": createWarehouseType,
-	}
-
-	if err := r.client.Mutate(ctx, &addResult, variables); err != nil {
-		toPrint := fmt.Sprintf("MC client 'AddConnection' mutation result - %s", err.Error())
-		diagsResult.AddError(toPrint, "")
-		return nil, diagsResult
-	}
-
-	data.Uuid = types.StringValue(addResult.AddConnection.Connection.Warehouse.Uuid)
-	data.Credentials.UpdatedAt = types.StringValue(addResult.AddConnection.Connection.CreatedOn)
-	data.Credentials.ConnectionUuid = types.StringValue(addResult.AddConnection.Connection.Uuid)
-	return &data, diagsResult
 }
 
 func databaseTestDiagnosticsToDiags(in []client.DatabaseTestDiagnostic) diag.Diagnostics {

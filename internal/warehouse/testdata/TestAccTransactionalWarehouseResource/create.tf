@@ -34,7 +34,7 @@ variable "pg_password" {
 }
 
 resource "montecarlo_transactional_warehouse" "test" {
-  name                = "name1"
+  name                = "test-warehouse"
   collector_uuid      = "a08d23fc-00a0-4c36-b568-82e9d0e67ad8"
   db_type             = "POSTGRES" # POSTGRES | MYSQL | SQL-SERVER
   deletion_protection = false
