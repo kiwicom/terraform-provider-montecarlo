@@ -58,8 +58,6 @@ resource "montecarlo_transactional_warehouse" "example" {
   - **MYSQL**
   - **SQL-SERVER**  
 
-  > **Warning:** If changed in the remote instance state or in the _Terraform_ configuration, resource instance will be **deleted** (leading to a new resource creation on the next `terraform plan/apply`).  
-
 - `credentials` (Attributes nested) Configuration options used by the warehouse connection for authentication and authorization against _Transactional DB_. (see [below for nested schema](#nestedatt--credentials))  
 
 ### Optional
@@ -80,7 +78,6 @@ Required:
 - `port` (Number)  Positive integer in range _[0, 65536]_
 
 - `database` (String) Name of the database to connect this warehouse to.
-  - If changed in the _Terraform_ configuration or externally in the remote instance state, resource instance will be **deleted** (leading to a new resource creation on the next `terraform plan/apply`).  
 
 - `password` (String, Sensitive)  
 
