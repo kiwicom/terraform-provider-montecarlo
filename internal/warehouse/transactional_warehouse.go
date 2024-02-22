@@ -102,9 +102,6 @@ func (r *TransactionalWarehouseResource) Schema(ctx context.Context, req resourc
 				Validators: []validator.String{
 					stringvalidator.OneOf("POSTGRES", "MYSQL", "SQL-SERVER"),
 				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplaceIfConfigured(),
-				},
 			},
 			"collector_uuid": schema.StringAttribute{
 				Required: true,
@@ -335,7 +332,6 @@ func (r *TransactionalWarehouseResource) ImportState(ctx context.Context, req re
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("uuid"), idsImported[0])...)
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("credentials").AtName("connection_uuid"), idsImported[1])...)
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("collector_uuid"), idsImported[2])...)
-		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("credentials"), TransactionalCredentials{})...)
 	} else {
 		resp.Diagnostics.AddError("Unexpected Import Identifier", fmt.Sprintf(
 			"Expected import identifier with format: <warehouse_uuid>,<connection_uuid>,<data_collector_uuid>. Got: %q", req.ID),
