@@ -1,5 +1,31 @@
 
 
+<a name="v0.4.0"></a>
+## v0.4.0
+
+> 2024-02-22
+
+- Full diff - **[v0.3.0...v0.4.0](https://github.com/kiwicom/terraform-provider-montecarlo/compare/v0.3.0...v0.4.0)**  
+
+### :books: Documentation (unchanged functionality)
+
+* **warehouse:** drift credentials examples and docs ([#89](https://github.com/kiwicom/terraform-provider-montecarlo/issues/89))
+
+### :bug: Bug Fixes
+
+* **warehouse:** transactional credentials drift changes ([#85](https://github.com/kiwicom/terraform-provider-montecarlo/issues/85))
+* **warehouse:** BQ credentials drift changes ([#84](https://github.com/kiwicom/terraform-provider-montecarlo/issues/84))
+
+### :mag: Tests (unchanged functionality)
+
+* **all:** acc. test working against real infrastructure ([#68](https://github.com/kiwicom/terraform-provider-montecarlo/issues/68))
+
+### :sparkles: Features
+
+* **monitors:** comparison_monitor basic create - stopped development ([#82](https://github.com/kiwicom/terraform-provider-montecarlo/issues/82))
+* **warehouse:** connection handling refactoring ([#86](https://github.com/kiwicom/terraform-provider-montecarlo/issues/86))
+
+
 <a name="v0.3.0"></a>
 ## v0.3.0
 
