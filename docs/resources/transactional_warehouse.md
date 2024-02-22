@@ -7,9 +7,7 @@ description: |-
 
 # montecarlo_transactional_warehouse (Resource)
 
-Represents the integration of the **Monte Carlo** platform with _Transactional_ data warehouse. While this resource is not responsible for handling data access and other operations, such as data filtering, it is **responsible for managing the connection** to the _Transactional DB_ using the provided configuration.
-
-> **Warning:** Current implementations of _warehouse_ resources are not capable of fetching credentials for given _warehouse_ from the **Monte Carlo** APIs. For this reason its not possible for this resource to detect whether the database configuration has been changed externally in the **Monte Carlo**. You can force database configuration update by changing remote instance state and re-running your _Terraform_ commands.
+Represents the integration of the **Monte Carlo** platform with _Transactional_ data warehouse. While this resource is not responsible for handling data access and other operations, such as data filtering, it is **responsible for managing the connection** to the _Transactional DB_ using the provided configuration.  
 
 To get more information about **Monte Carlo** warehouses, see:
 - [API documentation](https://apidocs.getmontecarlo.com/#definition-Warehouse)
@@ -24,11 +22,12 @@ To get more information about **Monte Carlo** warehouses, see:
 
 ```terraform
 resource "montecarlo_transactional_warehouse" "example" {
-  name           = "name"
-  collector_uuid = "uuid"
-  db_type        = "POSTGRES" # POSTGRES | MYSQL | SQL-SERVER
+  name                = "name"
+  collector_uuid      = "uuid"
+  db_type             = "POSTGRES" # POSTGRES | MYSQL | SQL-SERVER
+  deletion_protection = false
 
-  configuration = {
+  credentials = {
     host     = "host"
     port     = 5432
     database = "database"
@@ -61,7 +60,7 @@ resource "montecarlo_transactional_warehouse" "example" {
 
   > **Warning:** If changed in the remote instance state or in the _Terraform_ configuration, resource instance will be **deleted** (leading to a new resource creation on the next `terraform plan/apply`).  
 
-- `configuration` (Attributes nested) Configuration options used by the warehouse connection for authentication and authorization against _Transactional DB_. (see [below for nested schema](#nestedatt--configuration))  
+- `credentials` (Attributes nested) Configuration options used by the warehouse connection for authentication and authorization against _Transactional DB_. (see [below for nested schema](#nestedatt--credentials))  
 
 ### Optional
 
@@ -71,12 +70,8 @@ resource "montecarlo_transactional_warehouse" "example" {
 
 - `uuid` (String) Unique identifier of warehouse managed by this resource.  
 
-- `connection_uuid` (String) Unique identifier of connection managed by this resource, responsible for communication with _BigQuery_.  
-
-  - if _connection type_ of the connection managed by this reasource changes externally, this reasource **will fail to read** external state (_blocking any further resource functionality_). In such scenario a manual intervention is required.
-
-<a id="nestedatt--configuration"></a>
-### Nested Schema for `configuration`
+<a id="nestedatt--credentials"></a>
+### Nested Schema for `credentials`
 
 Required:
 
@@ -90,6 +85,14 @@ Required:
 - `password` (String, Sensitive)  
 
 - `username` (String, Sensitive)  
+
+Read Only:
+
+- `connection_uuid` (String) Unique identifier of connection managed by this resource, responsible for communication with _Transactional DB_.  
+
+  - if _connection type_ of the connection managed by this reasource changes externally, this reasource **will fail to read** external state (_blocking any further resource functionality_). In such scenario a manual intervention is required.  
+
+- `updated_at` (String) **Timestamp** of the last update in credentials done by this resource. This information is used mainly to detect drift changes in credentials _(external change)_.  
 
 
 

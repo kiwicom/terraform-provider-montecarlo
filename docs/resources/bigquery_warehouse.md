@@ -7,9 +7,7 @@ description: |-
 
 # montecarlo_bigquery_warehouse (Resource)
 
-Represents the integration of the **Monte Carlo** platform with _BigQuery_ data warehouse. While this resource is not responsible for handling data access and other operations, such as data filtering, it is **responsible for managing the connection** to the _BigQuery_ using the provided service account key.
-
-> **Warning:** Current implementations of _warehouse_ resources are not capable of fetching credentials for given _warehouse_ from the **Monte Carlo** APIs. For this reason its not possible for this resource to detect whether the credentials have been changed externally in the **Monte Carlo**. You can force credentials update by changing remote instance state and re-running your _Terraform_ commands.
+Represents the integration of the **Monte Carlo** platform with _BigQuery_ data warehouse. While this resource is not responsible for handling data access and other operations, such as data filtering, it is **responsible for managing the connection** to the _BigQuery_ using the provided service account key.  
 
 To get more information about **Monte Carlo** warehouses, see:
 - [API documentation](https://apidocs.getmontecarlo.com/#definition-Warehouse)
@@ -24,7 +22,8 @@ To get more information about **Monte Carlo** warehouses, see:
 resource "montecarlo_bigquery_warehouse" "example" {
   name                = "name"
   collector_uuid      = "uuid"
-  service_account_key = "{...}"
+  credentials         = { service_account_key = "{...}" }
+  deletion_protection = false
 }
 ```
 
@@ -42,9 +41,7 @@ resource "montecarlo_bigquery_warehouse" "example" {
 
   - If changed in the remote instance state, resource instance will be **removed** from the _Terraform_ state, but not deleted (leading to a new resource creation on the next `terraform plan/apply`).  
 
-- `service_account_key` (String, Sensitive) Service account key used by the warehouse connection for authentication and authorization against _BigQuery_. The very same service account is used to grant required permissions to _Monte Carlo BigQuery warehouse_ for the data access. For more information follow **Monte Carlo** documentation: https://docs.getmontecarlo.com/docs/bigquery.  
-
-  - The key must be provided as raw **JSON** string (_as obtained when downloaded from GCP UI_), otherwise this reasource will fail during _Terraform_ commands.  
+- `credentials` (Attributes nested) Configuration options used by the warehouse connection for authentication and authorization against _BigQuery_. (see [below for nested schema](#nestedatt--credentials))   
 
 ### Optional
 
@@ -54,9 +51,22 @@ resource "montecarlo_bigquery_warehouse" "example" {
 
 - `uuid` (String) Unique identifier of warehouse managed by this resource.  
 
+<a id="nestedatt--credentials"></a>
+### Nested Schema for `credentials`
+
+Required:
+
+- `service_account_key` (String, Sensitive) Service account key used by the warehouse connection for authentication and authorization against _BigQuery_. The very same service account is used to grant required permissions to _Monte Carlo BigQuery warehouse_ for the data access. For more information follow **Monte Carlo** documentation: https://docs.getmontecarlo.com/docs/bigquery.  
+
+  - The key must be provided as raw **JSON** string (_as obtained when downloaded from GCP UI_), otherwise this reasource will fail during _Terraform_ commands. 
+
+Read Only:
+
 - `connection_uuid` (String) Unique identifier of connection managed by this resource, responsible for communication with _BigQuery_.  
 
-  - if _connection type_ of the connection managed by this reasource changes externally, this reasource **will fail to read** external state (_blocking any further resource functionality_). In such scenario a manual intervention is required.
+  - if _connection type_ of the connection managed by this reasource changes externally, this reasource **will fail to read** external state (_blocking any further resource functionality_). In such scenario a manual intervention is required.  
+
+- `updated_at` (String) **Timestamp** of the last update in credentials done by this resource. This information is used mainly to detect drift changes in credentials _(external change)_.
 
 
 
