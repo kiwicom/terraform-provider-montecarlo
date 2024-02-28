@@ -290,7 +290,6 @@ func (r *BigQueryWarehouseResource) Delete(ctx context.Context, req resource.Del
 	if err := r.client.Mutate(ctx, &removeResult, variables); err != nil {
 		toPrint := fmt.Sprintf("MC client 'RemoveConnection' mutation result - %s", err.Error())
 		resp.Diagnostics.AddError(toPrint, "")
-		return
 	} else if !removeResult.RemoveConnection.Success {
 		toPrint := "MC client 'RemoveConnection' mutation - success = false, " +
 			"connection probably already doesn't exists. This resource will continue with its deletion"

@@ -99,6 +99,7 @@ func (p *Provider) Resources(ctx context.Context) []func() resource.Resource {
 		authorization.NewIamGroupResource,
 		authorization.NewIamMemberResource,
 		//monitor.NewComparisonMonitorResource,
+		authorization.NewServiceAccountResource,
 	}
 }
 
