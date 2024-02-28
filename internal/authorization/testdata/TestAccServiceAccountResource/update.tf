@@ -13,6 +13,6 @@ provider "montecarlo" {
   }
 }
 
-resource "montecarlo_service_account" "example" {
+resource "montecarlo_service_account" "test" {
   description = "sa-test"
 }
