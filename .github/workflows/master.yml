@@ -48,7 +48,7 @@ jobs:
           threshold-package: 0
           threshold-total: 0
       - name: make coverage badge
-        uses: action-badges/core@0.3.0
+        uses: action-badges/core@0.3.1
         with:
           label: coverage
           message: ${{ steps.coverage.outputs.badge-text }}
