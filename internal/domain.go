@@ -82,7 +82,12 @@ func (r *DomainResource) Schema(ctx context.Context, req resource.SchemaRequest,
 				},
 				Default: setdefault.StaticValue(
 					types.SetValueMust(
-						types.ObjectType{},
+						types.ObjectType{
+							AttrTypes: map[string]attr.Type{
+								"name": types.StringType,
+								"value": types.StringType,
+							},
+						},
 						[]attr.Value{},
 					),
 				),
