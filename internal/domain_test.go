@@ -83,7 +83,7 @@ func TestAccDomainResource(t *testing.T) {
 					//resource.TestCheckResourceAttr("montecarlo_domain.test", "uuid", domainUuid),
 					resource.TestCheckResourceAttr("montecarlo_domain.test", "name", "domain2"),
 					resource.TestCheckResourceAttr("montecarlo_domain.test", "description", "Domain test description 2"),
-					resource.TestCheckResourceAttr("montecarlo_domain.test", "assignments.#", "0"),
+					resource.TestCheckResourceAttr("montecarlo_domain.test", "assignments.#", "2"),
 					resource.TestCheckResourceAttr("montecarlo_domain.test", "tags.#", "0"),
 				),
 			},
