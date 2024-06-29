@@ -28,7 +28,7 @@ terraform {
   required_providers {
     monte_carlo = {
       source  = "kiwicom/montecarlo"
-      version = "~> 0.0.1"
+      version = "~> 0.4.0"
     }
   }
 }
