@@ -154,6 +154,8 @@ github.com/hasura/go-graphql-client v0.10.1 h1:9lY5mFfKRIjkPJ/EUq41mWYJZpTdAVjs2
 github.com/hasura/go-graphql-client v0.10.1/go.mod h1:z9UPkMmCBMuJjvBEtdE6F+oTR2r15AcjirVNq/8P+Ig=
 github.com/hasura/go-graphql-client v0.11.0 h1:EFEkpMZlkq5gLZj9oiI6TnHCOHV1oErxOroMc5qUHQI=
 github.com/hasura/go-graphql-client v0.11.0/go.mod h1:eNNnmHAp6NgwKZ4xRbZEfywxr07qk34Y0QhbPsYIfhw=
+github.com/hasura/go-graphql-client v0.12.2 h1:cYeQK/CELtvFy2jvik4kG0b5UMGngQRYWTTXQkbGHDo=
+github.com/hasura/go-graphql-client v0.12.2/go.mod h1:17qYcHgGSensF/wMAHKUhtMYaRZwZa3TyD7biqH9L3k=
 github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 h1:BQSFePA1RWJOlocH6Fxy8MmwDt+yVQYULKfN0RoTN8A=
 github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99/go.mod h1:1lJo3i6rXxKeerYnT8Nvf0QmHCRC1n8sfWVwXF2Frvo=
 github.com/jhump/protoreflect v1.15.1 h1:HUMERORf3I3ZdX05WaQ6MIpd/NJ434hTp5YiKgfCL6c=
@@ -353,3 +355,5 @@ nhooyr.io/websocket v1.8.9 h1:+U/9DCNIH1XnzrWKs7yZp4jO0e/m6mUEh2kRPKRQYeg=
 nhooyr.io/websocket v1.8.9/go.mod h1:rN9OFWIUwuxg4fR5tELlYC04bXYowCP9GX47ivo2l+c=
 nhooyr.io/websocket v1.8.10 h1:mv4p+MnGrLDcPlBoWsvPP7XCzTYMXP9F9eIGoKbgx7Q=
 nhooyr.io/websocket v1.8.10/go.mod h1:rN9OFWIUwuxg4fR5tELlYC04bXYowCP9GX47ivo2l+c=
+nhooyr.io/websocket v1.8.11 h1:f/qXNc2/3DpoSZkHt1DQu6rj4zGC8JmkkLkWss0MgN0=
+nhooyr.io/websocket v1.8.11/go.mod h1:rN9OFWIUwuxg4fR5tELlYC04bXYowCP9GX47ivo2l+c=
