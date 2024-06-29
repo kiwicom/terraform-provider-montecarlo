@@ -1,5 +1,27 @@
 
 
+<a name="v0.4.1"></a>
+## v0.4.1
+
+> 2024-06-30
+
+- Full diff - **[v0.4.0...v0.4.1](https://github.com/kiwicom/terraform-provider-montecarlo/compare/v0.4.0...v0.4.1)**  
+
+#### Terraform plugin dependencies updates
+- update module github.com/hashicorp/terraform-plugin-testing to v1.8.0 ([#98](https://github.com/kiwicom/terraform-provider-montecarlo/issues/98))
+- update module github.com/hashicorp/terraform-plugin-framework to v1.9.0 ([#96](https://github.com/kiwicom/terraform-provider-montecarlo/issues/96))
+- update module github.com/hashicorp/terraform-plugin-go to v0.23.0 ([#87](https://github.com/kiwicom/terraform-provider-montecarlo/issues/87))
+
+### :bug: Bug Fixes
+
+* **domain:** 'tags' attribute invalid default value ([#103](https://github.com/kiwicom/terraform-provider-montecarlo/issues/103))
+* **domain|test:** update - at least one 'assignment' or 'tag' must be always set ([#104](https://github.com/kiwicom/terraform-provider-montecarlo/issues/104))
+
+### :sparkles: Features
+
+* **authorization:** service account resource without permissions ([#97](https://github.com/kiwicom/terraform-provider-montecarlo/issues/97)) _(not yet documented or usable)_
+
+
 <a name="v0.4.0"></a>
 ## v0.4.0
 
