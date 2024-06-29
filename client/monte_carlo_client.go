@@ -323,3 +323,35 @@ type CreateOrUpdateComparisonRule struct {
 		}
 	} `graphql:"createOrUpdateComparisonRule(comparisons: $comparisons, customRuleUuid: $customRuleUuid, description: $description, queryResultType: $queryResultType, scheduleConfig: $scheduleConfig, sourceConnectionId: $sourceConnectionId, sourceDwId: $sourceDwId, sourceSqlQuery: $sourceSqlQuery, targetConnectionId: $targetConnectionId, targetDwId: $targetDwId, targetSqlQuery: $targetSqlQuery)"`
 }
+
+type CreateOrUpdateServiceApiToken struct {
+	CreateOrUpdateServiceApiToken struct {
+		AccessToken struct {
+			Id    string
+			Token string
+		}
+	} `graphql:"createOrUpdateServiceApiToken(comment: $comment, displayName: $displayName, expirationInDays: $expirationInDays, groups: $groups, tokenId: $tokenId)"`
+}
+
+type TokenMetadata struct {
+	Id                string
+	Comment           string
+	CreatedBy         string
+	CreationTime      string
+	Email             string
+	ExpirationTime    string
+	FirstName         string
+	LastName          string
+	Groups            []string
+	IsServiceApiToken bool
+}
+
+type GetTokenMetadata struct {
+	GetTokenMetadata []TokenMetadata `graphql:"getTokenMetadata(index: $index, isServiceApiToken: $isServiceApiToken)"`
+}
+
+type DeleteAccessToken struct {
+	DeleteAccessToken struct {
+		Success bool
+	} `graphql:"deleteAccessToken(tokenId: $tokenId)"`
+}

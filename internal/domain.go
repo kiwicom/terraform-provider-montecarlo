@@ -216,7 +216,6 @@ func (r *DomainResource) Delete(ctx context.Context, req resource.DeleteRequest,
 	if err := r.client.Mutate(ctx, &deleteResult, variables); err != nil {
 		toPrint := fmt.Sprintf("MC client 'DeleteDomain' mutation result - %s", err.Error())
 		resp.Diagnostics.AddError(toPrint, "")
-		return
 	} else if deleteResult.DeleteDomain.Deleted != 1 {
 		toPrint := fmt.Sprintf("MC client 'DeleteDomain' mutation - deleted = %d, "+
 			"expected result is 1 - more domains might have been deleted. This resource "+
