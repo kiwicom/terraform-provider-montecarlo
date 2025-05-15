@@ -321,6 +321,7 @@ func (r *BigQueryWarehouseResource) testCredentials(ctx context.Context, data Bi
 				[]byte(data.Credentials.ServiceAccountKey.ValueString()),
 			),
 		},
+		"dcId": graphql.String(data.CollectorUuid.ValueString()),
 	}
 
 	if err := r.client.Mutate(ctx, &testResult, variables); err != nil {
