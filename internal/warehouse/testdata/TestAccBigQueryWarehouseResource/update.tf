@@ -19,7 +19,7 @@ variable "bq_service_account" {
 
 resource "montecarlo_bigquery_warehouse" "test" {
   name                = "test-warehouse-updated"
-  collector_uuid      = "a08d23fc-00a0-4c36-b568-82e9d0e67ad8"
+  collector_uuid      = "9d1aee0a-6a90-47f0-8221-a884be707fc4"
   credentials         = { service_account_key = var.bq_service_account }
   deletion_protection = false
 }

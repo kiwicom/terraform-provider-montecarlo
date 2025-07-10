@@ -16,7 +16,7 @@ import (
 func TestAccTransactionalWarehouseResource(t *testing.T) {
 	mc_api_key_id := os.Getenv("MC_API_KEY_ID")
 	mc_api_key_token := os.Getenv("MC_API_KEY_TOKEN")
-	collectorUuid := "a08d23fc-00a0-4c36-b568-82e9d0e67ad8"
+	collectorUuid := "9d1aee0a-6a90-47f0-8221-a884be707fc4"
 
 	pgHost := os.Getenv("PG_HOST")
 	pgPortRaw := os.Getenv("PG_PORT")
