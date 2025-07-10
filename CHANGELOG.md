@@ -1,5 +1,24 @@
 
 
+<a name="v0.5.0"></a>
+## v0.5.0
+
+> 2025-07-10
+
+- Full diff - **[v0.4.1...v0.5.0](https://github.com/kiwicom/terraform-provider-montecarlo/compare/v0.4.1...v0.5.0)**  
+
+### :bug: Bug Fixes
+
+* fixes multiple bigquery collectors error ([#112](https://github.com/kiwicom/terraform-provider-montecarlo/issues/112))
+* **test:** ignore transactional warehouse - requires live transactional DB ([#116](https://github.com/kiwicom/terraform-provider-montecarlo/issues/116))
+* **test:** testing warehouses data collectors uuid ([#115](https://github.com/kiwicom/terraform-provider-montecarlo/issues/115))
+* **warehouse:** bq test credentials - deprecated graphql.String ([#117](https://github.com/kiwicom/terraform-provider-montecarlo/issues/117))
+
+### :sparkles: Features
+
+* go.mod dependencies upgrade ([#113](https://github.com/kiwicom/terraform-provider-montecarlo/issues/113))
+
+
 <a name="v0.4.1"></a>
 ## v0.4.1
 
