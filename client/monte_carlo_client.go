@@ -76,7 +76,7 @@ type TestBqCredentialsV2 struct {
 			Warnings BqTestWarnings
 			Errors   BqTestErrors
 		}
-	} `graphql:"testBqCredentialsV2(validationName: $validationName, connectionDetails: $connectionDetails)"`
+	} `graphql:"testBqCredentialsV2(validationName: $validationName, connectionDetails: $connectionDetails, connectionOptions: $connectionOptions)"`
 }
 
 type AddConnection struct {
