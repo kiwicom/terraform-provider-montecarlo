@@ -2,7 +2,7 @@ archives:
   - files:
       # Only include built binary in archive
       - 'none*'
-    format: zip
+    formats: zip
     name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
 
 builds:
