@@ -14,6 +14,8 @@ import (
 )
 
 func TestAccTransactionalWarehouseResource(t *testing.T) {
+	t.Skip("Currently ignored due to dependency on live transactional DB")
+
 	mc_api_key_id := os.Getenv("MC_API_KEY_ID")
 	mc_api_key_token := os.Getenv("MC_API_KEY_TOKEN")
 	collectorUuid := "9d1aee0a-6a90-47f0-8221-a884be707fc4"
