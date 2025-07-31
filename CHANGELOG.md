@@ -1,5 +1,17 @@
 
 
+<a name="v0.5.1"></a>
+## v0.5.1
+
+> 2025-07-31
+
+- Full diff - **[v0.5.0...v0.5.1](https://github.com/kiwicom/terraform-provider-montecarlo/compare/v0.5.0...v0.5.1)**  
+
+### :bug: Bug Fixes
+
+* **warehouse:** transactional - query_logs no longer accepted by the API
+
+
 <a name="v0.5.0"></a>
 ## v0.5.0
 
