@@ -1,5 +1,17 @@
 
 
+<a name="v0.5.2"></a>
+## v0.5.2
+
+> 2025-07-31
+
+- Full diff - **[v0.5.1...v0.5.2](https://github.com/kiwicom/terraform-provider-montecarlo/compare/v0.5.1...v0.5.2)**  
+
+### :bug: Bug Fixes
+
+* **warehouse:** transactional - json_schema no longer accepted by the API ([#122](https://github.com/kiwicom/terraform-provider-montecarlo/issues/122))
+
+
 <a name="v0.5.1"></a>
 ## v0.5.1
 
