@@ -57,9 +57,9 @@ func addConnection[T WarehouseResource[J, K], J WarehouseResourceModel, K TestCr
 		createWarehouseType = &temp
 	}
 
-	jobTypes := []string{"metadata", "sql_query", "json_schema"}
+	jobTypes := []string{"metadata", "sql_query"}
 	if connectionType != client.TrxConnectionType {
-		jobTypes = append(jobTypes, "query_logs")
+		jobTypes = append(jobTypes, "query_logs", "json_schema")
 	}
 
 	variables := map[string]interface{}{
